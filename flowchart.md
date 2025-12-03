@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
 
     A[Input Manifests<br>Paired Controls TSV] --> B[Build Unified Samples.tsv]
@@ -39,3 +40,4 @@ flowchart TD
     S16TABLE --> REPORT
     ITSTABLE --> REPORT
     HUMANN --> REPORT
+```
