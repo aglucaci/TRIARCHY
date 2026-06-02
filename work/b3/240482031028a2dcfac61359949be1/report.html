@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Trivium lightweight integration report</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; color: #17212b; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; }
+    th, td { border: 1px solid #d9dfe7; padding: 0.45rem; text-align: left; }
+    th { background: #eef5f3; }
+  </style>
+</head>
+<body>
+  <h1>Trivium Lightweight Integration Report</h1>
+  <p>This report validates the simulated WGS/16S/ITS Evidence Engine path.</p>
+  <h2>Signal Classification</h2>
+  <table><thead><tr><th>contrast_id</th><th>feature</th><th>assay_support</th><th>classification</th><th>evidence_grade</th><th>control_associated</th><th>why_called</th></tr></thead><tbody><tr><td>C01</td><td>Aspergillus</td><td>ITS</td><td>its_fungal_signal</td><td>B</td><td>false</td><td>Assay support: ITS. Direction/effects: ITS:up. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>Bacillus</td><td>16S</td><td>amplicon_resolved_bacterial_signal</td><td>C</td><td>false</td><td>Assay support: 16S. Direction/effects: 16S:down. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>Cladosporium</td><td>ITS</td><td>its_fungal_signal</td><td>B</td><td>false</td><td>Assay support: ITS. Direction/effects: ITS:down. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>Pseudomonas</td><td>16S;WGS</td><td>shared_bacterial_signal</td><td>A</td><td>false</td><td>Assay support: 16S, WGS. Direction/effects: 16S:up;WGS:up. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>Ralstonia</td><td>16S;WGS</td><td>control_associated_signal</td><td>Flagged</td><td>true</td><td>Assay support: 16S, WGS. Direction/effects: 16S:down;WGS:up. Negative-control enrichment detected.</td></tr><tr><td>C01</td><td>Sphingomonas</td><td>16S;WGS</td><td>shared_bacterial_signal</td><td>A</td><td>false</td><td>Assay support: 16S, WGS. Direction/effects: 16S:up;WGS:up. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>biofilm_formation</td><td>WGS_function</td><td>wgs_functional_signal</td><td>B</td><td>false</td><td>Assay support: WGS_function. Direction/effects: WGS_function:up. No negative-control enrichment detected.</td></tr><tr><td>C01</td><td>oxidative_stress_response</td><td>WGS_function</td><td>wgs_functional_signal</td><td>B</td><td>false</td><td>Assay support: WGS_function. Direction/effects: WGS_function:up. No negative-control enrichment detected.</td></tr></tbody></table>
+  <h2>WGS/16S Concordance</h2>
+  <table><thead><tr><th>contrast_id</th><th>shared_taxa_tested</th><th>effect_size_spearman</th><th>directional_agreement</th><th>significant_taxa_overlap</th><th>significant_taxa_jaccard</th><th>composite_concordance</th><th>concordance_label</th></tr></thead><tbody><tr><td>C01</td><td>4</td><td>1</td><td>0.75</td><td>2</td><td>0.666667</td><td>0.805556</td><td>high</td></tr></tbody></table>
+</body>
+</html>

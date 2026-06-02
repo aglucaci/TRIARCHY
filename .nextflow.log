@@ -1,0 +1,90 @@
+Jun-02 17:31:32.527 [main] DEBUG nextflow.cli.Launcher - $> nextflow run /Users/agl4001/Documents/TRIVIUM/workflow/simulated_test.nf -profile simulation -process.maxForks 2 --sim_config /Users/agl4001/Documents/TRIVIUM/config/test.config.yaml --sim_samplesheet test_data/metadata/samplesheet.csv --sim_outdir results/test/integrated --sim_target all
+Jun-02 17:31:32.566 [main] DEBUG nextflow.cli.CmdRun - N E X T F L O W  ~  version 26.04.3
+Jun-02 17:31:32.598 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/private/tmp/trivium-nextflow-home/plugins; core-plugins: nf-amazon@3.9.1,nf-azure@1.22.5,nf-cloudcache@0.6.0,nf-codecommit@0.5.2,nf-console@1.3.0,nf-google@1.27.3,nf-k8s@1.5.4,nf-seqera@0.20.1,nf-tower@1.28.0,nf-wave@1.21.0
+Jun-02 17:31:32.610 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jun-02 17:31:32.610 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jun-02 17:31:32.612 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.14.1 in 'deployment' mode
+Jun-02 17:31:32.615 [main] DEBUG nextflow.plugin.PluginUpdater - Using local update repository: /private/tmp/trivium-nextflow-home/plugins
+Jun-02 17:31:32.618 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jun-02 17:31:32.632 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /Users/agl4001/Documents/TRIVIUM/nextflow.config
+Jun-02 17:31:32.633 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /Users/agl4001/Documents/TRIVIUM/nextflow.config
+Jun-02 17:31:32.635 [main] DEBUG nextflow.config.ConfigParserFactory - Using config parser v2
+Jun-02 17:31:32.643 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `simulation`
+Jun-02 17:31:32.894 [main] DEBUG nextflow.config.ConfigBuilder - Available config profiles: [standard, simulation, conda, laptop, hpc, test]
+Jun-02 17:31:32.916 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jun-02 17:31:32.917 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins resolved requirement=[]
+Jun-02 17:31:32.924 [main] DEBUG n.secret.LocalSecretsProvider - Secrets store: /private/tmp/trivium-nextflow-home/secrets/store.json
+Jun-02 17:31:32.925 [main] DEBUG nextflow.secret.SecretsLoader - Discovered secrets providers: [nextflow.secret.LocalSecretsProvider@277bf091] - activable => nextflow.secret.LocalSecretsProvider@277bf091
+Jun-02 17:31:32.931 [main] DEBUG nextflow.cli.CmdRun - Launching `/Users/agl4001/Documents/TRIVIUM/workflow/simulated_test.nf` [marvelous_swartz] - revision: 3ebb2155a8
+Jun-02 17:31:32.966 [main] DEBUG nextflow.Session - Session UUID: f0f6a6a1-21da-4f6c-8aaa-a90ce858c6b4
+Jun-02 17:31:32.966 [main] DEBUG nextflow.Session - Run name: marvelous_swartz
+Jun-02 17:31:32.966 [main] DEBUG nextflow.Session - Executor pool size: 10
+Jun-02 17:31:32.970 [main] DEBUG nextflow.file.FilePorter - File porter settings maxRetries=3; maxTransfers=50; pollTimeout=null
+Jun-02 17:31:32.972 [main] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'FileTransfer' minSize=10; maxSize=30; workQueue=LinkedBlockingQueue[-1]; allowCoreThreadTimeout=false
+Jun-02 17:31:32.997 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 26.04.3 build 0
+  Created: 28-05-2026 08:01 UTC (04:01 EDT)
+  System: Mac OS X 26.4.1
+  Runtime: Groovy 4.0.31 on OpenJDK 64-Bit Server VM 26.0.1
+  Encoding: UTF-8 (UTF-8)
+  Process: 8126@MAC316418 [10.42.6.82]
+  CPUs: 10 - Mem: 32 GB (5.3 GB) - Swap: 0 (0)
+Jun-02 17:31:33.003 [main] DEBUG nextflow.Session - Work-dir: /Users/agl4001/Documents/TRIVIUM/work [Mac OS X]
+Jun-02 17:31:33.004 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /Users/agl4001/Documents/TRIVIUM/workflow/bin
+Jun-02 17:31:33.008 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jun-02 17:31:33.012 [main] DEBUG nextflow.Session - Observer factory (v2): LinObserverFactory
+Jun-02 17:31:33.013 [main] DEBUG nextflow.Session - Observer factory (v2): DefaultObserverFactory
+Jun-02 17:31:33.024 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+Jun-02 17:31:33.028 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 11; maxThreads: 1000
+Jun-02 17:31:33.055 [main] DEBUG nextflow.Session - Session start
+Jun-02 17:31:33.057 [main] DEBUG nextflow.script.ScriptLoaderFactory - Using script parser v2
+Jun-02 17:31:33.207 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jun-02 17:31:33.275 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-02 17:31:33.275 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-02 17:31:33.279 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Jun-02 17:31:33.282 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=10; memory=32 GB; capacity=10; pollInterval=100ms; dumpInterval=5m
+Jun-02 17:31:33.283 [main] DEBUG n.processor.TaskPollingMonitor - >>> barrier register (monitor: local)
+Jun-02 17:31:33.300 [main] DEBUG nextflow.processor.TaskProcessor - Creating process 'VALIDATE_SIM_SAMPLESHEET': maxForks=2; fair=false; array=0
+Jun-02 17:31:33.322 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-02 17:31:33.322 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-02 17:31:33.322 [main] DEBUG nextflow.processor.TaskProcessor - Creating process 'CLASSIFY_SIM_SIGNALS': maxForks=2; fair=false; array=0
+Jun-02 17:31:33.324 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-02 17:31:33.325 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-02 17:31:33.325 [main] DEBUG nextflow.processor.TaskProcessor - Creating process 'COMPUTE_SIM_CONCORDANCE': maxForks=2; fair=false; array=0
+Jun-02 17:31:33.327 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-02 17:31:33.327 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-02 17:31:33.327 [main] DEBUG nextflow.processor.TaskProcessor - Creating process 'BUILD_SIM_REPORT': maxForks=2; fair=false; array=0
+Jun-02 17:31:33.328 [main] DEBUG nextflow.Session - Process names: CLASSIFY_SIM_SIGNALS, COMPUTE_SIM_CONCORDANCE, BUILD_SIM_REPORT, VALIDATE_SIM_SAMPLESHEET
+Jun-02 17:31:33.329 [main] DEBUG nextflow.Session - Igniting dataflow network (4)
+Jun-02 17:31:33.329 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > VALIDATE_SIM_SAMPLESHEET
+Jun-02 17:31:33.329 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > CLASSIFY_SIM_SIGNALS
+Jun-02 17:31:33.329 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > COMPUTE_SIM_CONCORDANCE
+Jun-02 17:31:33.329 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > BUILD_SIM_REPORT
+Jun-02 17:31:33.330 [main] DEBUG nextflow.script.ScriptRunner - Parsed script files:
+  _nf_script_1180f3d9728ec129: /Users/agl4001/Documents/TRIVIUM/modules/local/simulation.nf
+  Main: /Users/agl4001/Documents/TRIVIUM/workflow/simulated_test.nf
+Jun-02 17:31:33.330 [main] DEBUG nextflow.script.ScriptRunner - > Awaiting termination 
+Jun-02 17:31:33.330 [main] DEBUG nextflow.Session - Session await
+Jun-02 17:31:33.380 [Task submitter] DEBUG n.executor.local.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jun-02 17:31:33.381 [Task submitter] INFO  nextflow.Session - [38/dd31ee] Submitted process > VALIDATE_SIM_SAMPLESHEET (simulated_samplesheet)
+Jun-02 17:31:33.467 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 1; name: VALIDATE_SIM_SAMPLESHEET (simulated_samplesheet); status: COMPLETED; exit: 0; error: -; workDir: /Users/agl4001/Documents/TRIVIUM/work/38/dd31ee826cc8c322df2118ccc71fa0]
+Jun-02 17:31:33.468 [Task monitor] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'TaskFinalizer' minSize=10; maxSize=30; workQueue=LinkedBlockingQueue[-1]; allowCoreThreadTimeout=false
+Jun-02 17:31:33.485 [Task submitter] DEBUG n.executor.local.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jun-02 17:31:33.486 [Task submitter] INFO  nextflow.Session - [d8/40bed1] Submitted process > COMPUTE_SIM_CONCORDANCE (wgs_16s_concordance)
+Jun-02 17:31:33.548 [Task submitter] DEBUG n.executor.local.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jun-02 17:31:33.548 [Task submitter] INFO  nextflow.Session - [99/06013e] Submitted process > CLASSIFY_SIM_SIGNALS (signal_classification)
+Jun-02 17:31:33.567 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 3; name: COMPUTE_SIM_CONCORDANCE (wgs_16s_concordance); status: COMPLETED; exit: 0; error: -; workDir: /Users/agl4001/Documents/TRIVIUM/work/d8/40bed15a9d3d4d29082bc8f76ea7e5]
+Jun-02 17:31:33.578 [TaskFinalizer-2] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'PublishDir' minSize=10; maxSize=30; workQueue=LinkedBlockingQueue[-1]; allowCoreThreadTimeout=false
+Jun-02 17:31:33.618 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 2; name: CLASSIFY_SIM_SIGNALS (signal_classification); status: COMPLETED; exit: 0; error: -; workDir: /Users/agl4001/Documents/TRIVIUM/work/99/06013eda711ef4067cf03459acae11]
+Jun-02 17:31:33.625 [Task submitter] DEBUG n.executor.local.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jun-02 17:31:33.625 [Task submitter] INFO  nextflow.Session - [b3/240482] Submitted process > BUILD_SIM_REPORT (lightweight_report)
+Jun-02 17:31:33.718 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 4; name: BUILD_SIM_REPORT (lightweight_report); status: COMPLETED; exit: 0; error: -; workDir: /Users/agl4001/Documents/TRIVIUM/work/b3/240482031028a2dcfac61359949be1]
+Jun-02 17:31:33.720 [main] DEBUG nextflow.Session - Session await > all processes finished
+Jun-02 17:31:33.823 [Task monitor] DEBUG n.processor.TaskPollingMonitor - <<< barrier arrives (monitor: local) - terminating tasks monitor poll loop
+Jun-02 17:31:33.823 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Jun-02 17:31:33.826 [main] DEBUG nextflow.util.ThreadPoolManager - Thread pool 'TaskFinalizer' shutdown completed (hard=false)
+Jun-02 17:31:33.826 [main] DEBUG nextflow.util.ThreadPoolManager - Thread pool 'PublishDir' shutdown completed (hard=false)
+Jun-02 17:31:33.831 [main] DEBUG n.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=4; failedCount=0; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=0; runningCount=0; retriesCount=0; abortedCount=0; succeedDuration=51ms; failedDuration=0ms; cachedDuration=0ms;loadCpus=0; loadMemory=0; peakRunning=2; peakCpus=2; peakMemory=0; ]
+Jun-02 17:31:33.968 [main] DEBUG nextflow.cache.CacheDB - Closing CacheDB done
+Jun-02 17:31:33.980 [main] DEBUG nextflow.util.ThreadPoolManager - Thread pool 'FileTransfer' shutdown completed (hard=false)
+Jun-02 17:31:33.980 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye

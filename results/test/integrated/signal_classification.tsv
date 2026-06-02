@@ -1,0 +1,9 @@
+contrast_id	feature	assay_support	classification	evidence_grade	control_associated	why_called
+C01	Aspergillus	ITS	its_fungal_signal	B	false	Assay support: ITS. Direction/effects: ITS:up. No negative-control enrichment detected.
+C01	Bacillus	16S	amplicon_resolved_bacterial_signal	C	false	Assay support: 16S. Direction/effects: 16S:down. No negative-control enrichment detected.
+C01	Cladosporium	ITS	its_fungal_signal	B	false	Assay support: ITS. Direction/effects: ITS:down. No negative-control enrichment detected.
+C01	Pseudomonas	16S;WGS	shared_bacterial_signal	A	false	Assay support: 16S, WGS. Direction/effects: 16S:up;WGS:up. No negative-control enrichment detected.
+C01	Ralstonia	16S;WGS	control_associated_signal	Flagged	true	Assay support: 16S, WGS. Direction/effects: 16S:down;WGS:up. Negative-control enrichment detected.
+C01	Sphingomonas	16S;WGS	shared_bacterial_signal	A	false	Assay support: 16S, WGS. Direction/effects: 16S:up;WGS:up. No negative-control enrichment detected.
+C01	biofilm_formation	WGS_function	wgs_functional_signal	B	false	Assay support: WGS_function. Direction/effects: WGS_function:up. No negative-control enrichment detected.
+C01	oxidative_stress_response	WGS_function	wgs_functional_signal	B	false	Assay support: WGS_function. Direction/effects: WGS_function:up. No negative-control enrichment detected.
