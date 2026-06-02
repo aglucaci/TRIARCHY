@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+*/.DS_Store
+
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/
+
+# Snakemake
+.snakemake/
+
+# Results / generated outputs
+results/
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
