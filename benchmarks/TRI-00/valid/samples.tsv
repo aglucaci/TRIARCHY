@@ -1,0 +1,17 @@
+library_id	biological_sample_id	specimen_id	subject_id	assay	sample_role	sample_material	environment_category	library_layout	fastq_r1	fastq_r2	extraction_batch	pcr_plate	library_batch	sequencing_run	technical_replicate
+BIO_A_WMS	BIO_A	SPEC_A	SUBJ_A	WMS	biological	active_air	return_air	paired	reads/BIO_A_WMS_R1.fastq.gz	reads/BIO_A_WMS_R2.fastq.gz	EB01		LB01	SR01	1
+BIO_A_16S	BIO_A	SPEC_A	SUBJ_A	16S	biological	active_air	return_air	paired	reads/BIO_A_16S_R1.fastq.gz	reads/BIO_A_16S_R2.fastq.gz	EB01	P16_01	LB01	SR01	1
+BIO_A_ITS	BIO_A	SPEC_A	SUBJ_A	ITS	biological	active_air	return_air	paired	reads/BIO_A_ITS_R1.fastq.gz	reads/BIO_A_ITS_R2.fastq.gz	EB01	PITS_01	LB01	SR01	1
+BIO_A_16S_R2	BIO_A	SPEC_A	SUBJ_A	16S	biological	active_air	return_air	paired	reads/BIO_A_16S_R2_R1.fastq.gz	reads/BIO_A_16S_R2_R2.fastq.gz	EB01	P16_01	LB01	SR01	2
+BIO_B_WMS	BIO_B	SPEC_B	SUBJ_B	WMS	biological	filter	supply_air	paired	reads/BIO_B_WMS_R1.fastq.gz	reads/BIO_B_WMS_R2.fastq.gz	EB02		LB02	SR02	1
+BIO_B_16S	BIO_B	SPEC_B	SUBJ_B	16S	biological	filter	supply_air	paired	reads/BIO_B_16S_R1.fastq.gz	reads/BIO_B_16S_R2.fastq.gz	EB02	P16_02	LB02	SR02	1
+EXT_NEG_01	EXT_NEG_01	EXT_NEG_01	CONTROL	WMS	negative_control	extraction_blank	control	paired	reads/EXT_NEG_01_R1.fastq.gz	reads/EXT_NEG_01_R2.fastq.gz	EB01		LB01	SR01	1
+EXT_NEG_01_16S	EXT_NEG_01	EXT_NEG_01	CONTROL	16S	negative_control	extraction_blank	control	paired	reads/EXT_NEG_01_16S_R1.fastq.gz	reads/EXT_NEG_01_16S_R2.fastq.gz	EB01	P16_01	LB01	SR01	1
+EXT_NEG_02	EXT_NEG_02	EXT_NEG_02	CONTROL	WMS	negative_control	extraction_blank	control	paired	reads/EXT_NEG_02_R1.fastq.gz	reads/EXT_NEG_02_R2.fastq.gz	EB02		LB02	SR02	1
+EXT_NEG_02_16S	EXT_NEG_02	EXT_NEG_02	CONTROL	16S	negative_control	extraction_blank	control	paired	reads/EXT_NEG_02_16S_R1.fastq.gz	reads/EXT_NEG_02_16S_R2.fastq.gz	EB02	P16_02	LB02	SR02	1
+PCR_NEG_16S	PCR_NEG_16S	PCR_NEG_16S	CONTROL	16S	negative_control	pcr_blank	control	paired	reads/PCR_NEG_16S_R1.fastq.gz	reads/PCR_NEG_16S_R2.fastq.gz	EB01	P16_01	LB01	SR01	1
+PCR_NEG_ITS	PCR_NEG_ITS	PCR_NEG_ITS	CONTROL	ITS	negative_control	pcr_blank	control	paired	reads/PCR_NEG_ITS_R1.fastq.gz	reads/PCR_NEG_ITS_R2.fastq.gz	EB01	PITS_01	LB01	SR01	1
+SEQ_NEG_WMS	SEQ_NEG_WMS	SEQ_NEG_WMS	CONTROL	WMS	negative_control	sequencing_blank	control	paired	reads/SEQ_NEG_WMS_R1.fastq.gz	reads/SEQ_NEG_WMS_R2.fastq.gz	EB01		LB01	SR01	1
+POS_MOCK_WMS	POS_MOCK	POS_MOCK	CONTROL	WMS	positive_control	mock	control	paired	reads/POS_MOCK_WMS_R1.fastq.gz	reads/POS_MOCK_WMS_R2.fastq.gz	EB01		LB01	SR01	1
+POS_MOCK_16S	POS_MOCK	POS_MOCK	CONTROL	16S	positive_control	mock	control	paired	reads/POS_MOCK_16S_R1.fastq.gz	reads/POS_MOCK_16S_R2.fastq.gz	EB01	P16_01	LB01	SR01	1
+POS_MOCK_ITS	POS_MOCK	POS_MOCK	CONTROL	ITS	positive_control	mock	control	paired	reads/POS_MOCK_ITS_R1.fastq.gz	reads/POS_MOCK_ITS_R2.fastq.gz	EB01	PITS_01	LB01	SR01	1

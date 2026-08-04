@@ -1,0 +1,3 @@
+library_id	biological_sample_id	specimen_id	subject_id	assay	sample_role	sample_material	environment_category	library_layout	fastq_r1	fastq_r2	extraction_batch	pcr_plate	library_batch	sequencing_run	technical_replicate
+ROLE_WMS	BIO_ROLE	SPEC_ROLE	SUBJ_ROLE	WMS	biological	active_air	return_air	paired	reads/role_wms_R1.fastq.gz	reads/role_wms_R2.fastq.gz	EB01		LB01	SR01	1
+ROLE_16S	BIO_ROLE	SPEC_ROLE	SUBJ_ROLE	16S	negative_control	active_air	return_air	paired	reads/role_16s_R1.fastq.gz	reads/role_16s_R2.fastq.gz	EB01	P16_01	LB01	SR01	1

@@ -6,9 +6,12 @@
 .nextflow/
 .nextflow.log*
 work/
-
-# Snakemake
-.snakemake/
+.tools/
+conf/references.config
+references/data/
+references/manifest.tsv
+references/.database-dir
+environment.lock.txt
 
 # Results / generated outputs
 results/

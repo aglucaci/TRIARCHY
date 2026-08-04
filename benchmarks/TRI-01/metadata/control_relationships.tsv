@@ -1,0 +1,7 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+BIO_A_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+BIO_A_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+BIO_A_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+BIO_B_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+BIO_B_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+BIO_B_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control

@@ -1,0 +1,19 @@
+{
+  "model_version": "evidence-v3.0",
+  "prior_presence": 0.25,
+  "contaminant_threshold": 0.65,
+  "cross_contamination_threshold": 0.45,
+  "batch_localization_threshold": 0.65,
+  "low_detection_power": 0.5,
+  "adequate_detection_power": 0.8,
+  "minimum_reference_coverage": 0.55,
+  "minimum_mapping_confidence": 0.5,
+  "present_score_threshold": 0.75,
+  "absent_score_threshold": 0.2,
+  "calibration": {
+    "method": "piecewise_linear",
+    "status": "synthetic_only_not_empirically_calibrated",
+    "breakpoints": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "values": [0.02, 0.08, 0.25, 0.62, 0.88, 0.98]
+  }
+}

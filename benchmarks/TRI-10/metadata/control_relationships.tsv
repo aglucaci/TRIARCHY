@@ -1,0 +1,13 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+EVEN_01_WMS	NEG_EXT_1_WMS	extraction	paired	1	batch-local extraction control
+EVEN_01_16S	NEG_EXT_1_16S	extraction	paired	1	batch-local extraction control
+EVEN_01_ITS	NEG_EXT_1_ITS	extraction	paired	1	batch-local extraction control
+EVEN_02_WMS	NEG_EXT_1_WMS	extraction	paired	1	batch-local extraction control
+EVEN_02_16S	NEG_EXT_1_16S	extraction	paired	1	batch-local extraction control
+EVEN_02_ITS	NEG_EXT_1_ITS	extraction	paired	1	batch-local extraction control
+EVEN_03_WMS	NEG_EXT_1_WMS	extraction	paired	1	batch-local extraction control
+EVEN_03_16S	NEG_EXT_1_16S	extraction	paired	1	batch-local extraction control
+EVEN_03_ITS	NEG_EXT_1_ITS	extraction	paired	1	batch-local extraction control
+EVEN_04_WMS	NEG_EXT_1_WMS	extraction	paired	1	batch-local extraction control
+EVEN_04_16S	NEG_EXT_1_16S	extraction	paired	1	batch-local extraction control
+EVEN_04_ITS	NEG_EXT_1_ITS	extraction	paired	1	batch-local extraction control

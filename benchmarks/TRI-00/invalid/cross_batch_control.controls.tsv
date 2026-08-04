@@ -1,0 +1,2 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+BIO_A_WMS	EXT_NEG_02	extraction	paired	1	invalid cross-batch edge

@@ -1,0 +1,16 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+CONTAM_B01_LOW_WMS	NEG_EXT_B01_WMS	extraction	paired	1	batch-local extraction control
+CONTAM_B01_LOW_16S	NEG_EXT_B01_16S	extraction	paired	1	batch-local extraction control
+CONTAM_B01_LOW_ITS	NEG_EXT_B01_ITS	extraction	paired	1	batch-local extraction control
+CONTAM_B01_MED_WMS	NEG_EXT_B01_WMS	extraction	paired	1	batch-local extraction control
+CONTAM_B01_MED_16S	NEG_EXT_B01_16S	extraction	paired	1	batch-local extraction control
+CONTAM_B01_MED_ITS	NEG_EXT_B01_ITS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_LOW_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_LOW_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+CONTAM_B02_LOW_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_HIGH_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_HIGH_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+CONTAM_B02_HIGH_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_MAX_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+CONTAM_B02_MAX_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+CONTAM_B02_MAX_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control

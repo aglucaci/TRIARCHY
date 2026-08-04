@@ -1,0 +1,16 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+TAX_synonym_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+TAX_synonym_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+TAX_synonym_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+TAX_unequal_rank_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+TAX_unequal_rank_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+TAX_unequal_rank_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+TAX_historical_fungal_name_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+TAX_historical_fungal_name_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+TAX_historical_fungal_name_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+TAX_genus_held_out_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+TAX_genus_held_out_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+TAX_genus_held_out_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+TAX_one_to_many_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+TAX_one_to_many_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+TAX_one_to_many_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control

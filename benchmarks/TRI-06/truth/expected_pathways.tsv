@@ -1,0 +1,6 @@
+library_id	pathway_id	expected_direction	expected_fraction
+TAX_synonym_WMS	PWY_CORE_METABOLISM	present	0.10
+TAX_unequal_rank_WMS	PWY_CORE_METABOLISM	present	0.10
+TAX_historical_fungal_name_WMS	PWY_CORE_METABOLISM	present	0.10
+TAX_genus_held_out_WMS	PWY_CORE_METABOLISM	present	0.10
+TAX_one_to_many_WMS	PWY_CORE_METABOLISM	present	0.10

@@ -1,0 +1,27 @@
+name: triarchy
+channels:
+  - conda-forge
+  - bioconda
+  - biobakery
+dependencies:
+  - python=3.12
+  - psutil
+  - reportlab
+  - fastp
+  - bowtie2
+  - kraken2
+  - bracken
+  - humann
+  - metaphlan
+  - diamond
+  - cutadapt
+  - itsxpress
+  - r-base
+  - bioconductor-dada2
+  - ncbi-datasets-cli
+  - curl
+  - wget
+  - pigz
+  - unzip
+  - p7zip
+  - coreutils

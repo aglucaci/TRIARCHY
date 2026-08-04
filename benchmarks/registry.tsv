@@ -1,0 +1,21 @@
+dataset_id	tier	name	purpose	approximate_libraries	status	primary_metric
+TRI-00	software	Metadata contract tests	Validate manifests controls and deterministic errors	0	implemented	schema validation
+TRI-01	software	Tiny smoke test	Verify complete workflow execution	12	implemented	workflow completion
+TRI-02	software	Assay branch tests	Isolate WMS 16S and ITS failures	18	implemented	branch correctness
+TRI-03	synthetic	Balanced compact truth community	Replicated mixed-kingdom truth for the five-dataset bundle	18	implemented	cross-assay status accuracy
+TRI-05	synthetic	Compact contamination gradient	Test low-biomass batch and assay-specific contamination truth	24	implemented	contaminant precision and recall
+TRI-06	synthetic	Compact taxonomy challenge	Test synonyms ranks historical names and held-out references	18	implemented	mapping and comparison-rank accuracy
+TRI-07	synthetic	Compact failure challenge	Test missing low-depth host-dominated empty and failed libraries	25	implemented	failure interpretation accuracy
+TRI-10	synthetic	Even mixed-kingdom mock	Test basic detection and assay-appropriate abundance	21	implemented	taxonomic F1
+TRI-11	synthetic	Log-abundance mock	Estimate detection limits over six orders of magnitude	24	implemented	detection calibration
+TRI-12	synthetic	Low-biomass contamination ladder	Benchmark paired-control filtering	112	implemented	contaminant precision and recall
+TRI-13	synthetic	Environmental gradient	Recover known ecological structure	75	implemented	ecological effect recovery
+TRI-14	synthetic	Taxonomic ambiguity challenge	Test harmonization and comparison rank	48	implemented	agreement-rank accuracy
+TRI-15	synthetic	Batch and control-linkage challenge	Compare paired and global controls	97	implemented	batch-aware contamination accuracy
+TRI-16	synthetic	Missing and failed modalities	Test graceful degradation	30	implemented	missingness classification
+TRI-17	synthetic	Depth primer and reference factorial	Test interacting sensitivity and reference limitations	36	implemented	detection and explanation calibration
+TRI-18	synthetic	Sequencing carryover and index leakage	Separate run-local carryover from other contamination	54	implemented	carryover precision and recall
+TRI-19	synthetic	Technical and extraction repeatability	Measure stability across replicates runs and batches	84	implemented	evidence-status repeatability
+TRI-20	physical	Commercial physical standards	Executable acquisition and analysis surrogate	45	implemented_design_surrogate	empirical taxonomic accuracy
+TRI-21	physical	Environmental mixed-kingdom mock	Executable acquisition and analysis surrogate	114	implemented_design_surrogate	kingdom-specific calibration
+TRI-30	environmental	Matched built-environment study	Executable balanced study surrogate	192	implemented_design_surrogate	robust ecological conclusions

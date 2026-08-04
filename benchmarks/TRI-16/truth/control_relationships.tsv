@@ -1,0 +1,22 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+S01_COMPLETE_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+S01_COMPLETE_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+S01_COMPLETE_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+S02_WMS_16S_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+S02_WMS_16S_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+S03_WMS_ITS_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+S03_WMS_ITS_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+S04_16S_ITS_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+S04_16S_ITS_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+S05_WMS_ONLY_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+S06_FAILED_ITS_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+S06_FAILED_ITS_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+S06_FAILED_ITS_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control
+S07_LOW_16S_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+S07_LOW_16S_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+S07_LOW_16S_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control
+S08_HOST_WMS_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+S08_HOST_WMS_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control
+S08_HOST_WMS_ITS	NEG_EXT_B02_ITS	extraction	paired	1	batch-local extraction control
+S09_FWD_ONLY_WMS	NEG_EXT_B02_WMS	extraction	paired	1	batch-local extraction control
+S10_MISMATCHED_16S	NEG_EXT_B02_16S	extraction	paired	1	batch-local extraction control

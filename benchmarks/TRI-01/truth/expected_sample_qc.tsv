@@ -1,0 +1,13 @@
+library_id	expected_qc_status	expected_read_pairs	expected_host_fraction	expected_action
+BIO_A_WMS	pass	24	0.00	retain
+BIO_A_16S	pass	24	0.00	retain
+BIO_A_ITS	pass	24	0.00	retain
+BIO_B_WMS	pass	24	0.00	retain
+BIO_B_16S	pass	24	0.00	retain
+BIO_B_ITS	pass	24	0.00	retain
+NEG_EXT_WMS	pass	24	0.00	retain
+NEG_EXT_16S	pass	24	0.00	retain
+NEG_EXT_ITS	no_target_template	0	0.00	qualify
+POS_MOCK_WMS	pass	24	0.00	retain
+POS_MOCK_16S	pass	24	0.00	retain
+POS_MOCK_ITS	pass	24	0.00	retain

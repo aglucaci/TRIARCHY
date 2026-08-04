@@ -1,0 +1,13 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+F01_COMPLETE_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+F01_COMPLETE_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+F01_COMPLETE_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+F02_WMS_16S_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+F02_WMS_16S_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+F03_WMS_ITS_WMS	NEG_EMPTY_WMS	extraction	paired	1	batch-local extraction control
+F03_WMS_ITS_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+F04_16S_ITS_16S	NEG_EMPTY_16S	extraction	paired	1	batch-local extraction control
+F04_16S_ITS_ITS	NEG_EMPTY_ITS	extraction	paired	1	batch-local extraction control
+F05_FAILED_ITS_16S	NEG_PCR16_B02_16S	pcr	paired	1	batch-local pcr control
+F06_LOW_16S_16S	NEG_PCR16_B02_16S	pcr	paired	1	batch-local pcr control
+F07_HOST_WMS_16S	NEG_PCR16_B02_16S	pcr	paired	1	batch-local pcr control

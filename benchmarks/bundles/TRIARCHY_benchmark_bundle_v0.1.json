@@ -1,0 +1,8 @@
+{
+  "bundle_id": "TRIARCHY_benchmark_bundle_v0.1",
+  "description": "Compact reproducible software benchmark and resource-profiling bundle",
+  "datasets": ["TRI-01", "TRI-03", "TRI-05", "TRI-06", "TRI-07"],
+  "expected_dataset_count": 5,
+  "expected_library_count": 97,
+  "measurement_note": "Stub resource profiles validate orchestration only. Production estimates require real reads, references, and assay tools."
+}

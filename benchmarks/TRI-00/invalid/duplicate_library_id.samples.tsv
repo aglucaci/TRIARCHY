@@ -1,0 +1,3 @@
+library_id	biological_sample_id	specimen_id	subject_id	assay	sample_role	sample_material	environment_category	library_layout	fastq_r1	fastq_r2	extraction_batch	pcr_plate	library_batch	sequencing_run	technical_replicate
+DUPLICATE	BIO_A	SPEC_A	SUBJ_A	WMS	biological	active_air	return_air	paired	reads/a_R1.fastq.gz	reads/a_R2.fastq.gz	EB01		LB01	SR01	1
+DUPLICATE	BIO_B	SPEC_B	SUBJ_B	WMS	biological	dust	return_air	paired	reads/b_R1.fastq.gz	reads/b_R2.fastq.gz	EB01		LB01	SR01	1

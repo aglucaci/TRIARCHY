@@ -1,0 +1,36 @@
+{
+  "assertions": [
+    {
+      "expected": 97,
+      "id": "library_count",
+      "operator": "equals"
+    },
+    {
+      "expected": true,
+      "id": "metadata_valid",
+      "operator": "equals"
+    },
+    {
+      "expected": [
+        "WMS",
+        "16S",
+        "ITS"
+      ],
+      "id": "required_assays_present",
+      "operator": "set_equals"
+    },
+    {
+      "expected": 0,
+      "id": "unexpected_workflow_failure",
+      "operator": "equals"
+    },
+    {
+      "id": "taxon_status_truth",
+      "operator": "table_match_with_tolerance",
+      "relative_abundance_tolerance": 0.001,
+      "truth_file": "expected_taxon_status.tsv"
+    }
+  ],
+  "dataset": "TRI-15",
+  "schema_version": "1.0"
+}

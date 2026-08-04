@@ -1,0 +1,10 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+BIO_A_WMS	EXT_NEG_01	extraction	paired	1	same extraction batch
+BIO_A_WMS	SEQ_NEG_WMS	sequencing	run_level	2	same sequencing run
+BIO_A_16S	EXT_NEG_01_16S	extraction	paired	1	same extraction batch
+BIO_A_16S	PCR_NEG_16S	pcr	paired	1	same PCR plate
+BIO_A_ITS	PCR_NEG_ITS	pcr	paired	1	same PCR plate
+BIO_A_16S_R2	EXT_NEG_01_16S	extraction	paired	1	same extraction batch
+BIO_A_16S_R2	PCR_NEG_16S	pcr	paired	1	same PCR plate
+BIO_B_WMS	EXT_NEG_02	extraction	paired	1	same extraction batch
+BIO_B_16S	EXT_NEG_02_16S	extraction	paired	1	same extraction batch

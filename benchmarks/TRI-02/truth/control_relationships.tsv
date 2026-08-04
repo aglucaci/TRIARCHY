@@ -1,0 +1,19 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+WMS_STRESS_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+WMS_STRESS_WMS	NEG_LIBWMS_WMS	library	paired	2	batch-local library control
+WMS_STRESS_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+WMS_STRESS_16S	NEG_PCR16_16S	pcr	paired	2	batch-local pcr control
+WMS_STRESS_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+WMS_STRESS_ITS	NEG_PCRITS_ITS	pcr	paired	2	batch-local pcr control
+AMP_STRESS_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+AMP_STRESS_WMS	NEG_LIBWMS_WMS	library	paired	2	batch-local library control
+AMP_STRESS_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+AMP_STRESS_16S	NEG_PCR16_16S	pcr	paired	2	batch-local pcr control
+AMP_STRESS_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+AMP_STRESS_ITS	NEG_PCRITS_ITS	pcr	paired	2	batch-local pcr control
+FUNGAL_STRESS_WMS	NEG_EXT_WMS	extraction	paired	1	batch-local extraction control
+FUNGAL_STRESS_WMS	NEG_LIBWMS_WMS	library	paired	2	batch-local library control
+FUNGAL_STRESS_16S	NEG_EXT_16S	extraction	paired	1	batch-local extraction control
+FUNGAL_STRESS_16S	NEG_PCR16_16S	pcr	paired	2	batch-local pcr control
+FUNGAL_STRESS_ITS	NEG_EXT_ITS	extraction	paired	1	batch-local extraction control
+FUNGAL_STRESS_ITS	NEG_PCRITS_ITS	pcr	paired	2	batch-local pcr control
