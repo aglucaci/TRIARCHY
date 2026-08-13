@@ -70,7 +70,61 @@ class EvidenceComparisonTests(unittest.TestCase):
             self.assertEqual("1", result["contaminant_precision"])
             self.assertEqual("1", result["contaminant_recall"])
             self.assertEqual("1", result["explanatory_status_accuracy"])
+            self.assertEqual("0", result["false_concordance_rate"])
+            self.assertEqual("0", result["false_discordance_rate"])
             self.assertEqual("0", result["brier_score"])
+
+    def test_rank_and_error_metrics_are_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            truth_path = root / "truth.tsv"
+            prediction_path = root / "prediction.tsv"
+            truth_rows = [
+                {
+                    "biological_sample_id": "S1",
+                    "taxon": "TaxonA",
+                    "truth_status": "authentic",
+                    "expected_cross_assay_status": "concordant",
+                    "supported_comparison_rank": "genus",
+                    "truth_abundance": "0.005",
+                },
+                {
+                    "biological_sample_id": "S1",
+                    "taxon": "TaxonB",
+                    "truth_status": "absent",
+                    "expected_cross_assay_status": "indeterminate",
+                    "supported_comparison_rank": "species",
+                    "truth_abundance": "0",
+                },
+            ]
+            prediction_rows = [
+                {
+                    "biological_sample_id": "S1",
+                    "canonical_name": "TaxonA",
+                    "biological_state": "present",
+                    "classification": "concordant_detection",
+                    "comparison_rank": "genus",
+                    "probability_authentic": "0.9",
+                },
+                {
+                    "biological_sample_id": "S1",
+                    "canonical_name": "TaxonB",
+                    "biological_state": "present",
+                    "classification": "concordant_detection",
+                    "comparison_rank": "genus",
+                    "probability_authentic": "0.8",
+                },
+            ]
+            write_tsv(truth_path, truth_rows)
+            write_tsv(prediction_path, prediction_rows)
+            truth = {
+                comparison.prediction_key(row): row
+                for row in comparison.read_tsv(truth_path)
+            }
+            result = comparison.compare("naive", prediction_path, truth)
+            self.assertEqual("0.5", result["false_concordance_rate"])
+            self.assertEqual("0.5", result["comparison_rank_accuracy"])
+            self.assertEqual("1", result["low_abundance_authentic_retention"])
 
 
 if __name__ == "__main__":

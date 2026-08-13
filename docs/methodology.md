@@ -6,7 +6,7 @@ TRIARCHY jointly interprets matched WMS, 16S, and ITS data while preserving the
 measurement scale and biological scope of each assay. It integrates evidence,
 not raw relative abundance.
 
-## 1. Sample–control graph
+## 1. Sample-control graph
 
 The experimental design is a bipartite graph connecting biological libraries
 to field, extraction, PCR, library, and sequencing controls. Edges carry the
@@ -40,7 +40,7 @@ recorded.
 
 ## 3. Control-aware feature annotation
 
-For each sample–taxon–assay combination, the implementation calculates three
+For each sample-taxon-assay combination, the implementation calculates three
 transparent signals:
 
 1. **Prevalence:** whether the feature occurs more often in linked negative
@@ -71,18 +71,32 @@ as species-level concordance or discordance.
 
 Cross-assay comparisons respect biological scope:
 
-- bacteria and archaea: WMS ↔ 16S;
-- fungi: WMS ↔ ITS;
+- bacteria and archaea: WMS <-> 16S;
+- fungi: WMS <-> ITS;
 - functional potential: WMS only.
 
-The executable `evidence-v3.0` model treats every sample–taxon–assay
-combination as detected, measured-but-not-detected, or not measured. It
-estimates assay-specific detection power from library depth, assay reliability,
-quality state, kingdom, and reference coverage. This prevents a missing assay
-or underpowered fungal WMS library from being interpreted as biological
-absence.
+The TRIARCHY evidence model is two-stage. Stage I estimates
+`biological_authenticity`, a posterior-style evidence estimate that a taxon is
+biologically authentic in a sample. Stage II assigns `cross_assay_status`, the
+explanation for agreement or disagreement among the kingdom-appropriate assays.
 
-The model emits nine explanatory evidence classes:
+The model treats every sample-taxon-assay combination as detected,
+measured-but-not-detected, or not measured. It estimates assay-specific
+detection power from library depth, assay reliability, quality state, kingdom,
+primer compatibility when supplied, and reference coverage. This prevents a
+missing assay or underpowered fungal WMS library from being interpreted as
+biological absence.
+
+The model emits a parent `cross_assay_status` for summaries:
+
+- `concordant`;
+- `assay_limited`;
+- `taxonomy_limited`;
+- `contamination_associated`;
+- `genuine_discordance`;
+- `indeterminate`.
+
+It also retains nine detailed explanatory classes in `classification`:
 
 - `concordant_detection`;
 - `single_assay_credible`;
@@ -94,10 +108,15 @@ The model emits nine explanatory evidence classes:
 - `probable_contaminant`;
 - `indeterminate`.
 
-A transparent presence score starts from a versioned prior and updates log odds
-using positive detections, technically adequate nondetections, mapping support,
-reference coverage, and linked-control contamination evidence. Per-assay
-positive evidence is:
+The Stage-I `biological_authenticity` estimate starts from a versioned prior
+and updates log odds using positive detections, technically adequate
+nondetections, mapping support, taxonomic compatibility, reference coverage,
+and linked-control contamination evidence. It is a posterior-style evidence
+estimate under the configured policy, not an empirically calibrated probability
+of presence. Approximate uncertainty bounds are serialized as
+`authenticity_ci_low`, `authenticity_ci_high`, and `authenticity_uncertainty`;
+wide intervals are assigned `authenticity_state = indeterminate`.
+Per-assay positive evidence is:
 
 ```text
 e(s,t,m) = detection_support
@@ -105,6 +124,7 @@ e(s,t,m) = detection_support
            * resolution_support
            * mapping_support
            * reliability
+           * primer_compatibility
            * (1 - contamination_probability)
 ```
 
@@ -117,13 +137,21 @@ power(s,t,m) = reliability(m,t)
                * quality_factor(s,m)
 ```
 
+False-detection evidence is tracked by experimental stage when linked controls
+are present: field, extraction, PCR, library, sequencing/run, other controls,
+and batch localization. The strongest source is serialized as
+`probable_contamination_source`.
+
 Defaults live in `conf/assay_performance.tsv`; thresholds, priors, model
 version, and calibration metadata live in `conf/evidence_policy.json`. Both
 files are inputs to every run and are copied into `evidence_model.json`.
 
 Evidence rows receive `sample_evidence_rank` and `global_evidence_rank`.
-Comparisons use the least-resolved supported rank. Calls sharing a canonical
-taxon but differing in resolution are `rank_limited_agreement`.
+Comparisons use the least-resolved supported rank and also report
+`taxonomic_compatibility_score` and `taxonomic_compatibility_status`. Calls
+sharing a canonical taxon but differing in resolution are
+`rank_limited_agreement`; explicitly incompatible assignments are
+`genuine_discordance` when both assay contexts are technically adequate.
 
 The repository includes an isotonic calibration command and a truth-based
 evaluation command. The shipped mapping is explicitly
@@ -135,8 +163,8 @@ Benchmark comparisons are serialized by
 `scripts/compare_evidence_methods.py`. It accepts named outputs from independent
 assay analysis, naive merging, shared-taxonomy analysis, Greengenes2,
 per-assay decontam, global controls, Com-2seq, and full TRIARCHY, and reports
-presence precision/recall/F1, contaminant precision/recall, explanatory-status
-accuracy, and Brier score against the same truth table.
+authentic-taxon precision/recall/F1, contaminant precision/recall,
+explanatory-status accuracy, and Brier score against the same truth table.
 
 ## 6. Diversity and functional interpretation
 
@@ -152,8 +180,8 @@ biological effect sizes. A joint diversity value requires a separately
 validated common or latent representation.
 
 The executable concordance table reports kingdom-aware presence Jaccard,
-Spearman rank correlation on shared taxa, and rank agreement for WMS–16S
-bacterial/archaeal and WMS–ITS fungal comparisons. These compare detection and
+Spearman rank correlation on shared taxa, and rank agreement for WMS-16S
+bacterial/archaeal and WMS-ITS fungal comparisons. These compare detection and
 ordering, never raw abundance across assays.
 
 HUMAnN pathways, coverage, contributing taxa, and unclassified fractions remain
@@ -209,7 +237,7 @@ TRIARCHY should not claim calibrated integrated confidence until:
 2. Implement strict validation for the two input contracts.
 3. Emit immutable assay-native and control-annotated profiles.
 4. Add versioned taxonomy crosswalk generation.
-5. Implement rule-based evidence classes with complete decision reasons.
+5. Implement two-stage authenticity/explanation inference with complete decision reasons.
 6. Add assay-specific diversity and ecological concordance.
 7. Build the five-question analytical report.
 8. Add containers, reference manifests, CI data, provenance, and benchmarks.

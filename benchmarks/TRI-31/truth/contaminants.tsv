@@ -1,0 +1,10 @@
+taxon	contamination_pattern	stage	expected_batches	expected_modalities
+Ralstonia_pickettii	universal_reagent	extraction	all	WMS,16S
+Cutibacterium_acnes	skin_associated	field	all	WMS,16S
+Sphingomonas_paucimobilis	water_associated	extraction	all	WMS,16S
+Burkholderia_cepacia	batch_B02	extraction	B02	WMS,16S
+Penicillium_chrysogenum	fungal_reagent	pcr	all	ITS
+Malassezia_restricta	index_bleed	sequencing	all	ITS
+CON_A	showcase_reagent	field/extraction	all	WMS,16S
+CON_B	showcase_batch_B02	extraction	B02	WMS,16S
+CON_C	showcase_its_pcr	pcr	all	ITS

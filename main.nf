@@ -16,11 +16,13 @@ include {
 } from './modules/local/integration'
 
 workflow {
-    if (!params.samples || !params.controls) {
-        error 'Required parameters: --samples and --controls'
+    samples_param = params.samples ?: params.input
+    controls_param = params.controls ?: params.paired_controls
+    if (!samples_param || !controls_param) {
+        error 'Required parameters: --samples/--input and --controls/--paired_controls'
     }
-    samples = file(params.samples, checkIfExists: true)
-    controls = file(params.controls, checkIfExists: true)
+    samples = file(samples_param, checkIfExists: true)
+    controls = file(controls_param, checkIfExists: true)
     s16_taxonomy = params.s16_taxonomy ?
         file(params.s16_taxonomy, checkIfExists: true) : ''
     its_taxonomy = params.its_taxonomy ?

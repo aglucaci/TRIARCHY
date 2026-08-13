@@ -8,6 +8,17 @@ import csv
 from pathlib import Path
 
 
+STATUS_ALIASES = {
+    "concordant": "concordant_detection",
+    "single_assay_supported": "single_assay_credible",
+    "single-assay_supported": "single_assay_credible",
+    "assay_limited": "assay_limited_nondetection",
+    "contamination_associated": "probable_contaminant",
+    "probable_contamination": "probable_contaminant",
+    "discordant": "genuine_discordance",
+}
+
+
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle, delimiter="\t"))
@@ -24,9 +35,34 @@ def prediction_key(row: dict[str, str]) -> tuple[str, str]:
     )
 
 
+def normalize_status(value: str) -> str:
+    normalized = value.strip().casefold().replace("-", "_")
+    return STATUS_ALIASES.get(normalized, normalized)
+
+
+def abundance_value(row: dict[str, str]) -> float | None:
+    for field in (
+        "truth_abundance",
+        "relative_abundance",
+        "genomic_dna_abundance",
+        "genome_copy_abundance",
+        "expected_abundance",
+    ):
+        value = row.get(field, "")
+        if value == "":
+            continue
+        try:
+            return float(value)
+        except ValueError:
+            continue
+    return None
+
+
 def compare(method: str, prediction_path: Path, truth: dict[tuple[str, str], dict[str, str]]) -> dict[str, object]:
     predictions = {prediction_key(row): row for row in read_tsv(prediction_path)}
     tp = fp = fn = contaminant_tp = contaminant_fp = status_correct = matched = 0
+    false_concordance = false_discordance = rank_correct = rank_matched = 0
+    low_abundance_total = low_abundance_retained = 0
     brier = []
     for key, expected in truth.items():
         row = predictions.get(key, {})
@@ -47,10 +83,30 @@ def compare(method: str, prediction_path: Path, truth: dict[tuple[str, str], dic
             "expected_cross_assay_status", expected.get("classification", "")
         )
         if expected_status and row:
+            expected_status = normalize_status(expected_status)
+            predicted_status = normalize_status(row.get("classification", ""))
             matched += 1
-            status_correct += int(row.get("classification") == expected_status)
-        if row.get("probability_authentic", ""):
-            brier.append((float(row["probability_authentic"]) - int(actual)) ** 2)
+            status_correct += int(predicted_status == expected_status)
+            false_concordance += int(
+                predicted_status == "concordant_detection"
+                and expected_status != "concordant_detection"
+            )
+            false_discordance += int(
+                predicted_status == "genuine_discordance"
+                and expected_status != "genuine_discordance"
+            )
+        expected_rank = normalize_status(expected.get("supported_comparison_rank", ""))
+        predicted_rank = normalize_status(row.get("comparison_rank", ""))
+        if expected_rank and row:
+            rank_matched += 1
+            rank_correct += int(expected_rank == predicted_rank)
+        abundance = abundance_value(expected)
+        if actual and abundance is not None and abundance <= 0.01:
+            low_abundance_total += 1
+            low_abundance_retained += int(predicted)
+        calibration_score = row.get("biological_authenticity", row.get("probability_authentic", ""))
+        if calibration_score != "":
+            brier.append((float(calibration_score) - int(actual)) ** 2)
     precision = safe_ratio(tp, tp + fp)
     recall = safe_ratio(tp, tp + fn)
     contaminant_precision = safe_ratio(contaminant_tp, contaminant_tp + contaminant_fp)
@@ -68,6 +124,13 @@ def compare(method: str, prediction_path: Path, truth: dict[tuple[str, str], dic
         "contaminant_precision": f"{contaminant_precision:.6g}",
         "contaminant_recall": f"{safe_ratio(contaminant_tp, contaminant_total):.6g}",
         "explanatory_status_accuracy": f"{safe_ratio(status_correct, matched):.6g}",
+        "false_concordance_rate": f"{safe_ratio(false_concordance, matched):.6g}",
+        "false_discordance_rate": f"{safe_ratio(false_discordance, matched):.6g}",
+        "comparison_rank_accuracy": f"{safe_ratio(rank_correct, rank_matched):.6g}",
+        "low_abundance_authentic_retention": (
+            f"{safe_ratio(low_abundance_retained, low_abundance_total):.6g}"
+            if low_abundance_total else ""
+        ),
         "brier_score": f"{sum(brier) / len(brier):.6g}" if brier else "",
     }
 

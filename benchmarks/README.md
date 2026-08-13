@@ -8,11 +8,12 @@ recovery require different truth designs.
 
 | Tier | IDs | Purpose |
 | --- | --- | --- |
-| Software/CI | TRI-00–TRI-02 | Contracts, smoke tests, and isolated assay branches |
-| Compact bundle | TRI-01, TRI-03, TRI-05–TRI-07 | Five-dataset, 97-library CI and resource-profile bundle |
-| Synthetic truth | TRI-10–TRI-19 | Accuracy, sensitivity, contamination, ecology, harmonization, failures, carryover, and repeatability |
-| Physical mocks | TRI-20–TRI-21 | Extraction, amplification, library, and laboratory performance |
+| Software/CI | TRI-00 to TRI-02 | Contracts, smoke tests, and isolated assay branches |
+| Compact bundle | TRI-01, TRI-03, TRI-05 to TRI-07 | Five-dataset, 97-library CI and resource-profile bundle |
+| Synthetic truth | TRI-10 to TRI-19 | Accuracy, sensitivity, contamination, ecology, harmonization, failures, carryover, and repeatability |
+| Physical mocks | TRI-20 to TRI-21 | Extraction, amplification, library, and laboratory performance |
 | Environmental | TRI-30 | Publication-grade matched environmental application |
+| Showcase | TRI-31 | Home-computer 30-minute demonstration design and expected output bundle |
 
 The machine-readable inventory is [registry.tsv](registry.tsv). `status` has
 one of four values:
@@ -26,9 +27,9 @@ one of four values:
 
 ## Implemented datasets
 
-### TRI-00 — Metadata contract tests
+### TRI-00 - Metadata contract tests
 
-[TRI-00](TRI-00/README.md) contains a valid multi-assay sample–control graph and
+[TRI-00](TRI-00/README.md) contains a valid multi-assay sample-control graph and
 separate malformed cases. The validator returns stable `TRI-META-*` codes so CI
 can test both acceptance and failure behavior.
 
@@ -46,7 +47,7 @@ No external Python packages are required.
 
 ### Runnable CI, synthetic, and design-surrogate fixtures
 
-Twelve deterministic datasets implement the inventory while remaining small
+Twenty deterministic datasets implement the inventory while remaining small
 enough to keep in the repository:
 
 | Dataset | Libraries | Scenario |
@@ -70,12 +71,18 @@ enough to keep in the repository:
 | TRI-20 | 45 | Commercial-standard executable design surrogate |
 | TRI-21 | 114 | Custom mixed-kingdom mock design surrogate |
 | TRI-30 | 192 | Balanced 48-sample built-environment design surrogate |
+| TRI-31 | 51 | 30-minute TRIARCHY showcase with 12 biological samples, seven controls, expected tables, figures, mini function references, and narrative report |
 
-Together they contain 1,047 libraries. Every dataset includes actual
-gzip-compressed FASTQs, valid metadata, sample–control edges, the complete truth
+Together they contain 1,098 libraries. Every dataset includes actual
+gzip-compressed FASTQs, valid metadata, sample-control edges, the complete truth
 package, checksums, and generation provenance. TRI-20, TRI-21, and TRI-30 are
 explicitly labeled design surrogates: they make acquisition plans and analysis
 contracts executable but do not replace physical mocks or field data.
+
+TRI-31 is the repository-sized implementation of the 30-minute showcase design.
+It keeps the full 19-sample, 51-library metadata/control design in Git while
+scaling FASTQs down for CI. Its `bundle_summary.json` records the full-scale
+target of 2,526,000 paired-end reads for a future publication-sized bundle.
 
 Regenerate and validate all fixtures:
 
@@ -128,24 +135,24 @@ Every dataset directory must eventually contain:
 ```text
 README.md
 metadata/
-├── samples.tsv
-└── control_relationships.tsv
+|-- samples.tsv
+`-- control_relationships.tsv
 truth/
-├── community_members.tsv
-├── sample_composition_genomic_dna.tsv
-├── sample_composition_genome_copy.tsv
-├── sample_composition_16s.tsv
-├── sample_composition_its.tsv
-├── read_origin_wms.tsv.gz
-├── true_16s_asvs.fasta
-├── true_its_asvs.fasta
-├── taxonomic_crosswalk.tsv
-├── contaminants.tsv
-├── control_relationships.tsv
-├── expected_sample_qc.tsv
-├── expected_taxon_status.tsv
-├── expected_pathways.tsv
-└── generation_manifest.json
+|-- community_members.tsv
+|-- sample_composition_genomic_dna.tsv
+|-- sample_composition_genome_copy.tsv
+|-- sample_composition_16s.tsv
+|-- sample_composition_its.tsv
+|-- read_origin_wms.tsv.gz
+|-- true_16s_asvs.fasta
+|-- true_its_asvs.fasta
+|-- taxonomic_crosswalk.tsv
+|-- contaminants.tsv
+|-- control_relationships.tsv
+|-- expected_sample_qc.tsv
+|-- expected_taxon_status.tsv
+|-- expected_pathways.tsv
+`-- generation_manifest.json
 ```
 
 Physical and environmental datasets may omit inapplicable synthetic read-origin

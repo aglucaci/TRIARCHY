@@ -175,7 +175,7 @@ def render(output: Path) -> None:
 
     node(c, 718, 510, 168, 62, "Linked-control annotation\nTaxa + functions", INTEGRATION)
     node(c, 718, 400, 168, 58, "Taxonomic harmonization\nCanonical shared ranks", INTEGRATION)
-    node(c, 922, 485, 170, 58, "Evidence classification\nPolicy + assay reliability", INTEGRATION)
+    node(c, 922, 485, 170, 58, "Authenticity + explanation\nPolicy + assay reliability", INTEGRATION)
     node(c, 922, 390, 170, 58, "Cross-assay concordance", INTEGRATION)
     node(c, 718, 285, 168, 58, "Assay-specific diversity\nAlpha + beta", INTEGRATION)
     node(c, 718, 190, 168, 54, "Sample confidence", INTEGRATION)

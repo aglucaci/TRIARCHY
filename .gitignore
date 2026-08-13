@@ -15,6 +15,21 @@ environment.lock.txt
 
 # Results / generated outputs
 results/
+output/
+tmp/
+data/*
+!data/README.md
+
+# Manuscript build products
+manuscript/*.aux
+manuscript/*.bbl
+manuscript/*.blg
+manuscript/*.fdb_latexmk
+manuscript/*.fls
+manuscript/*.log
+manuscript/*.out
+manuscript/*.pdf
+manuscript/*.docx
 
 # Logs
 *.log

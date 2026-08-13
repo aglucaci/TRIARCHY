@@ -15,7 +15,7 @@ DATASET_IDS = (
     "TRI-01", "TRI-02", "TRI-03", "TRI-05", "TRI-06", "TRI-07",
     "TRI-10", "TRI-11", "TRI-12", "TRI-13", "TRI-14", "TRI-15", "TRI-16",
     "TRI-17", "TRI-18", "TRI-19",
-    "TRI-20", "TRI-21", "TRI-30",
+    "TRI-20", "TRI-21", "TRI-30", "TRI-31",
 )
 EXPECTED_LIBRARY_COUNTS = {
     "TRI-01": 12,
@@ -37,6 +37,7 @@ EXPECTED_LIBRARY_COUNTS = {
     "TRI-20": 45,
     "TRI-21": 114,
     "TRI-30": 192,
+    "TRI-31": 51,
 }
 REQUIRED_TRUTH = {
     "community_members.tsv",
@@ -147,7 +148,12 @@ class BenchmarkDatasetTests(unittest.TestCase):
         for dataset_id in DATASET_IDS:
             with self.subTest(dataset=dataset_id):
                 reference_dir = ROOT / "benchmarks" / dataset_id / "references"
-                self.assertEqual(required, {path.name for path in reference_dir.iterdir()})
+                reference_names = {path.name for path in reference_dir.iterdir()}
+                self.assertTrue(required <= reference_names)
+                if dataset_id != "TRI-31":
+                    self.assertEqual(required, reference_names)
+                else:
+                    self.assertTrue({"mini_function_catalog.fasta", "mini_function_mapping.tsv"} <= reference_names)
                 for name in required:
                     text = (reference_dir / name).read_text(encoding="ascii")
                     if name == "artificial_host.fasta":
@@ -157,6 +163,7 @@ class BenchmarkDatasetTests(unittest.TestCase):
         self.assertGreater(EXPECTED_LIBRARY_COUNTS["TRI-02"], EXPECTED_LIBRARY_COUNTS["TRI-01"])
         self.assertGreater(EXPECTED_LIBRARY_COUNTS["TRI-12"], EXPECTED_LIBRARY_COUNTS["TRI-10"])
         self.assertGreaterEqual(EXPECTED_LIBRARY_COUNTS["TRI-30"], 144)
+        self.assertEqual(51, EXPECTED_LIBRARY_COUNTS["TRI-31"])
 
 
 if __name__ == "__main__":

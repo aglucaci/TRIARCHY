@@ -8,17 +8,23 @@ readonly LOCAL_NEXTFLOW="${PROJECT_DIR}/.tools/bin/nextflow"
 usage() {
     cat <<'EOF'
 Usage:
+  ./run_triarchy.sh --demo [NEXTFLOW_OPTIONS]
+  ./run_triarchy.sh --lite [NEXTFLOW_OPTIONS]
   ./run_triarchy.sh --stub [NEXTFLOW_OPTIONS]
   ./run_triarchy.sh [NEXTFLOW_OPTIONS] --samples FILE --controls FILE
 
 Wrapper for `nextflow run main.nf`.
 
 Wrapper options:
+  --demo             Run the TRI-31 showcase deterministic workflow
+  --lite             Run the lightweight laptop-friendly deterministic workflow
   --stub             Run the complete deterministic TRI-00 stub workflow
   -h, --help         Show this help
   --                 Pass all following arguments directly to Nextflow
 
 Examples:
+  ./run_triarchy.sh --demo
+  ./run_triarchy.sh --lite
   ./run_triarchy.sh --stub
   ./run_triarchy.sh --stub -resume --outdir results/stub
   ./run_triarchy.sh -profile local \
@@ -37,7 +43,9 @@ Environment:
   NXF_HOME             Nextflow cache (default: PROJECT/.nextflow)
   NXF_VER              Nextflow version (default: .nextflow-version)
 
-All unrecognized options are passed directly to Nextflow.
+All unrecognized options are passed directly to Nextflow. The --lite and
+--demo modes are aliases for stub workflows with laptop-friendly resource
+profiles and default output directories.
 EOF
 }
 
@@ -47,10 +55,22 @@ die() {
 }
 
 stub_run=false
+lite_run=false
+demo_run=false
 forwarded=()
 
 while (($#)); do
     case "$1" in
+        --demo)
+            demo_run=true
+            stub_run=true
+            shift
+            ;;
+        --lite)
+            lite_run=true
+            stub_run=true
+            shift
+            ;;
         --stub)
             stub_run=true
             shift
@@ -103,12 +123,27 @@ has_option() {
 }
 
 if [[ "${stub_run}" == true ]]; then
+    if [[ "${demo_run}" == true ]] && ! has_option -profile; then
+        forwarded=(-profile demo "${forwarded[@]}")
+    elif [[ "${lite_run}" == true ]] && ! has_option -profile; then
+        forwarded=(-profile lite "${forwarded[@]}")
+    fi
+    default_outdir="${PROJECT_DIR}/results/stub"
+    default_samples="${PROJECT_DIR}/benchmarks/TRI-00/valid/samples.tsv"
+    default_controls="${PROJECT_DIR}/benchmarks/TRI-00/valid/control_relationships.tsv"
+    if [[ "${demo_run}" == true ]]; then
+        default_outdir="${PROJECT_DIR}/results/showcase_30min"
+        default_samples="${PROJECT_DIR}/benchmarks/TRI-31/metadata/samples.tsv"
+        default_controls="${PROJECT_DIR}/benchmarks/TRI-31/metadata/control_relationships.tsv"
+    elif [[ "${lite_run}" == true ]]; then
+        default_outdir="${PROJECT_DIR}/results/lite"
+    fi
     has_option --samples ||
-        forwarded+=(--samples "${PROJECT_DIR}/benchmarks/TRI-00/valid/samples.tsv")
+        forwarded+=(--samples "${default_samples}")
     has_option --controls ||
-        forwarded+=(--controls "${PROJECT_DIR}/benchmarks/TRI-00/valid/control_relationships.tsv")
+        forwarded+=(--controls "${default_controls}")
     has_option --outdir ||
-        forwarded+=(--outdir "${TRIARCHY_OUTDIR:-${PROJECT_DIR}/results/stub}")
+        forwarded+=(--outdir "${TRIARCHY_OUTDIR:-${default_outdir}}")
     forwarded=(-stub-run "${forwarded[@]}")
 else
     reference_config="${PROJECT_DIR}/conf/references.config"
@@ -131,6 +166,16 @@ else
 fi
 
 printf 'TRIARCHY: Nextflow %s\n' "${NXF_VER}"
-printf 'TRIARCHY: output mode: %s\n' "$([[ "${stub_run}" == true ]] && printf stub || printf production)"
+printf 'TRIARCHY: output mode: %s\n' "$(
+    if [[ "${demo_run}" == true ]]; then
+        printf demo
+    elif [[ "${lite_run}" == true ]]; then
+        printf lite
+    elif [[ "${stub_run}" == true ]]; then
+        printf stub
+    else
+        printf production
+    fi
+)"
 
 exec "${nextflow_bin}" run "${PROJECT_DIR}/main.nf" "${forwarded[@]}"

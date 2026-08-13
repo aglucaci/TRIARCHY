@@ -9,6 +9,8 @@ import gzip
 import hashlib
 import json
 import random
+import struct
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -76,6 +78,18 @@ TAXA_LIST = (
     Taxon("Fusarium_oxysporum", "Fungi", "Fusarium", "GCF_000149955.1", 61.4, marker_its_copies=60),
     Taxon("Malassezia_restricta", "Fungi", "Malassezia", "GCF_003290485.1", 7.4, marker_its_copies=25, recovery_its=0.3),
     Taxon("Novelomyces_aerophilus", "Fungi", "Novelomyces", "HELDOUT_FUNGUS_01", 28.0, marker_its_copies=20, reference_status="genus_held_out"),
+    Taxon("BAC_A", "Bacteria", "Aerisoma", "SHOWCASE_BAC_A", 3.4, 5),
+    Taxon("BAC_B", "Bacteria", "Aerisoma", "SHOWCASE_BAC_B", 3.6, 5),
+    Taxon("BAC_C", "Bacteria", "Filtrimonas", "SHOWCASE_BAC_C", 4.1, 3),
+    Taxon("BAC_D", "Bacteria", "Ventilobacter", "SHOWCASE_BAC_D", 3.2, 6, recovery_16s=0.22),
+    Taxon("BAC_SKIN", "Bacteria", "Dermatobacter", "SHOWCASE_BAC_SKIN", 2.7, 4),
+    Taxon("ARC_A", "Archaea", "Methanoaeris", "SHOWCASE_ARC_A", 2.0, 2),
+    Taxon("FUN_A", "Fungi", "Cladosporioides", "SHOWCASE_FUN_A", 30.0, marker_its_copies=45),
+    Taxon("FUN_B", "Fungi", "Outdooromyces", "SHOWCASE_FUN_B", 28.0, marker_its_copies=70, reference_status="wms_reference_limited"),
+    Taxon("FUN_C", "Fungi", "Dustomyces", "SHOWCASE_FUN_C", 35.0, marker_its_copies=30),
+    Taxon("CON_A", "Bacteria", "Reagentia", "SHOWCASE_CON_A", 5.0, 3),
+    Taxon("CON_B", "Bacteria", "Batchia", "SHOWCASE_CON_B", 5.5, 4),
+    Taxon("CON_C", "Fungi", "Blankomyces", "SHOWCASE_CON_C", 22.0, marker_its_copies=90),
 )
 TAXA = {taxon.name: taxon for taxon in TAXA_LIST}
 CONTAMINANTS = {
@@ -85,6 +99,9 @@ CONTAMINANTS = {
     "Burkholderia_cepacia": ("batch_B02", "extraction"),
     "Penicillium_chrysogenum": ("fungal_reagent", "pcr"),
     "Malassezia_restricta": ("index_bleed", "sequencing"),
+    "CON_A": ("showcase_reagent", "field/extraction"),
+    "CON_B": ("showcase_batch_B02", "extraction"),
+    "CON_C": ("showcase_its_pcr", "pcr"),
 }
 ZYMO = [
     "Listeria_monocytogenes", "Pseudomonas_aeruginosa", "Bacillus_subtilis",
@@ -351,6 +368,40 @@ def specimens_for(dataset_id: str) -> tuple[Specimen, ...]:
                 Specimen(f"POS_{batch}", "positive_control", batch, 100),
             ]
         return tuple(items)
+    if dataset_id == "TRI-31":
+        items = []
+        designs = (
+            ("OUTDOOR_AIR", "outdoor_air", "active_air", 20),
+            ("SUPPLY_AIR", "supply_air", "air_filter", 5),
+            ("RETURN_AIR", "return_air", "air_filter", 25),
+            ("SETTLED_DUST", "settled_dust", "settled_dust", 120),
+        )
+        for state_i, (prefix, environment, material, biomass) in enumerate(designs):
+            for replicate in range(1, 4):
+                batch = "B01" if replicate < 3 else "B02"
+                qc = (("WMS", "host_32pct"),) if environment == "return_air" else ()
+                items.append(
+                    Specimen(
+                        f"{prefix}_{replicate:02d}",
+                        "biological",
+                        batch,
+                        biomass,
+                        environment,
+                        material,
+                        cohort="showcase_30min",
+                        qc=qc,
+                    )
+                )
+        items += [
+            Specimen("FIELD_BLANK", "negative_control", "B01", 0, "field_blank", "control"),
+            Specimen("EB01", "negative_control", "B01", 0, "extraction_blank", "control"),
+            Specimen("EB02", "negative_control", "B02", 0, "extraction_blank", "control"),
+            Specimen("PCR_BLANK_16S", "negative_control", "B01", 0, "pcr_blank", "control", assays=("16S",)),
+            Specimen("PCR_BLANK_ITS", "negative_control", "B01", 0, "pcr_blank", "control", assays=("ITS",)),
+            Specimen("WMS_LIB_BLANK", "negative_control", "B01", 0, "library_blank", "control", assays=("WMS",)),
+            Specimen("POS_MIXED", "positive_control", "B01", 100, "mixed_positive_control", "mock"),
+        ]
+        return tuple(items)
     raise ValueError(dataset_id)
 
 
@@ -370,10 +421,11 @@ DATASET_META = (
     ("TRI-16", "Missing-modality and failure challenge", "Graceful integration of missing, failed, low-depth, and unreliable assays.", "missing", "synthetic"),
     ("TRI-17", "Depth, primer, and reference factorial", "Jointly test depth-limited detection, marker recovery bias, copy number, and held-out references.", "sensitivity_matrix", "synthetic"),
     ("TRI-18", "Sequencing carryover and index leakage", "Separate run-local carryover from extraction and assay-specific contamination using linked controls.", "carryover", "synthetic"),
-    ("TRI-19", "Technical and extraction repeatability", "Measure within-run, between-run, and extraction-batch stability of evidence classifications.", "repeatability", "synthetic"),
+    ("TRI-19", "Technical and extraction repeatability", "Measure within-run, between-run, and extraction-batch stability of authenticity and cross-assay explanations.", "repeatability", "synthetic"),
     ("TRI-20", "Commercial mixed-community standards", "Executable design surrogate for even DNA, whole-cell, and log DNA standards.", "physical", "physical_design_surrogate"),
     ("TRI-21", "Custom environmental mixed-kingdom mock", "Executable design surrogate spanning profile, biomass, and kingdom diversity.", "envmock", "physical_design_surrogate"),
     ("TRI-30", "Matched built-environment microbiome study", "Executable balanced design surrogate for a 48-sample matched study.", "environmental", "environmental_design_surrogate"),
+    ("TRI-31", "Thirty-minute TRIARCHY showcase dataset", "Home-computer showcase with 12 biological samples, seven controls, host DNA, reagent contamination, batch contamination, primer bias, taxonomic ambiguity, fungal reference limitation, pathways, expected figures, and expected tables.", "showcase", "synthetic_showcase"),
 )
 DATASETS = tuple(
     Dataset(dataset_id, title, purpose, specimens_for(dataset_id), mode, provenance)
@@ -483,6 +535,54 @@ def base_composition(dataset: Dataset, specimen: Specimen) -> dict[str, float]:
         elif specimen.environment == "LOG":
             weights = {name: 10 ** (-i / 2) for i, name in enumerate(names)}
         return normalize(weights)
+    if dataset.mode == "showcase":
+        if specimen.role == "negative_control":
+            if specimen.name == "FIELD_BLANK":
+                return normalize({"CON_A": 8, "BAC_SKIN": 1})
+            if specimen.name in {"EB01", "EB02"}:
+                weights = {"CON_A": 7, "CON_B": 1}
+                if specimen.name == "EB02":
+                    weights["CON_B"] = 8
+                return normalize(weights)
+            if specimen.name == "PCR_BLANK_16S":
+                return normalize({"CON_A": 3, "CON_B": 1})
+            if specimen.name == "PCR_BLANK_ITS":
+                return normalize({"CON_C": 10, "FUN_A": 1})
+            if specimen.name == "WMS_LIB_BLANK":
+                return normalize({"CON_A": 2, "CON_B": 2})
+            return {}
+        if specimen.role == "positive_control":
+            return normalize({
+                "BAC_A": 2, "BAC_B": 2, "BAC_C": 2, "BAC_D": 2,
+                "ARC_A": 1, "FUN_A": 2, "FUN_B": 2, "FUN_C": 2,
+            })
+        env = specimen.environment
+        if env == "outdoor_air":
+            weights = {
+                "FUN_A": 8, "FUN_B": 6, "BAC_A": 3, "BAC_B": 2,
+                "BAC_D": 1.5, "ARC_A": 0.5, "CON_A": 0.15,
+            }
+        elif env == "supply_air":
+            weights = {
+                "BAC_C": 3, "BAC_A": 1.5, "FUN_A": 0.7, "FUN_B": 0.4,
+                "ARC_A": 0.2, "CON_A": 0.35,
+            }
+        elif env == "return_air":
+            weights = {
+                "BAC_SKIN": 7, "BAC_A": 2, "BAC_B": 1.5, "BAC_D": 2.5,
+                "FUN_C": 1, "ARC_A": 0.4, "CON_A": 0.2,
+            }
+        elif env == "settled_dust":
+            weights = {
+                "BAC_A": 4, "BAC_B": 4, "BAC_C": 3, "BAC_D": 3,
+                "BAC_SKIN": 2, "ARC_A": 1, "FUN_A": 5, "FUN_B": 5,
+                "FUN_C": 4, "CON_A": 0.2,
+            }
+        else:
+            weights = {"BAC_A": 1, "FUN_A": 1}
+        if specimen.batch == "B02":
+            weights["CON_B"] = weights.get("CON_B", 0) + 0.8
+        return normalize(weights)
     if dataset.mode in {"habitat", "environmental"}:
         weights = {name: 1 for name in ENVIRONMENTAL}
         env = specimen.environment.lower()
@@ -591,6 +691,254 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def write_simple_png(path: Path, rgb: tuple[int, int, int]) -> None:
+    """Write a small valid PNG without adding external dependencies."""
+    width, height = 640, 360
+    row = bytes([0]) + bytes(rgb) * width
+    raw = row * height
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        payload = kind + data
+        return struct.pack(">I", len(data)) + payload + struct.pack(">I", zlib.crc32(payload) & 0xFFFFFFFF)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw, level=9))
+        + chunk(b"IEND", b"")
+    )
+
+
+def write_showcase_outputs(
+    root: Path,
+    samples: list[dict[str, object]],
+    controls: list[dict[str, object]],
+    sample_qc: list[dict[str, object]],
+    expected_taxa: list[dict[str, object]],
+    taxon_status: list[dict[str, object]],
+    pathways: list[dict[str, object]],
+) -> None:
+    expected_dir = root / "expected_outputs"
+    table_dir = expected_dir / "tables"
+    figure_dir = expected_dir / "figures"
+    report_dir = root / "report"
+    reference_dir = root / "references"
+
+    biological_samples = sorted({
+        str(row["biological_sample_id"])
+        for row in samples
+        if row["sample_role"] == "biological"
+    })
+    environment_by_sample = {
+        str(row["biological_sample_id"]): str(row["environment_category"])
+        for row in samples
+        if row["sample_role"] == "biological"
+    }
+
+    write_tsv(table_dir / "sample_qc.tsv", list(sample_qc[0]), sample_qc)
+    write_tsv(table_dir / "sample_control_edges.tsv", CONTROL_FIELDS, controls)
+    write_tsv(
+        table_dir / "contamination_decisions.tsv",
+        ["taxon", "pattern", "primary_control", "decision", "showcase_message"],
+        [
+            {"taxon": "CON_A", "pattern": "field_and_extraction_reagent", "primary_control": "FIELD_BLANK;EB01;EB02", "decision": "probable_contaminant", "showcase_message": "Reagent signal enriched in field and extraction controls."},
+            {"taxon": "CON_B", "pattern": "batch_B02_extraction", "primary_control": "EB02", "decision": "cross_contamination_candidate", "showcase_message": "Batch-local signal elevated in extraction batch B02."},
+            {"taxon": "CON_C", "pattern": "ITS_PCR_blank", "primary_control": "PCR_BLANK_ITS", "decision": "probable_contaminant", "showcase_message": "ITS-specific contaminant concentrated in the ITS PCR blank."},
+        ],
+    )
+    write_tsv(
+        table_dir / "taxonomic_harmonization_examples.tsv",
+        ["taxon", "source_assay", "source_rank", "comparison_rank", "expected_classification", "reason"],
+        [
+            {"taxon": "BAC_A/B", "source_assay": "16S", "source_rank": "genus", "comparison_rank": "genus", "expected_classification": "rank_limited_agreement", "reason": "Marker evidence cannot safely distinguish the two designed close relatives."},
+            {"taxon": "FUN_B", "source_assay": "WMS", "source_rank": "genus", "comparison_rank": "genus", "expected_classification": "reference_limited", "reason": "ITS resolves the fungal signal more strongly than the lightweight WMS reference."},
+            {"taxon": "BAC_D", "source_assay": "16S", "source_rank": "species", "comparison_rank": "species", "expected_classification": "assay_limited_nondetection", "reason": "16S recovery is deliberately reduced by primer bias."},
+        ],
+    )
+    write_tsv(
+        table_dir / "taxon_evidence.tsv",
+        ["biological_sample_id", "taxon", "expected_classification", "biological_state", "showcase_reason"],
+        [
+            {
+                "biological_sample_id": sample_id,
+                "taxon": row["taxon"],
+                "expected_classification": row["expected_cross_assay_status"],
+                "biological_state": "indeterminate" if row["expected_cross_assay_status"] in {"assay_limited_nondetection", "reference_limited"} else "present",
+                "showcase_reason": row["reason"],
+            }
+            for sample_id in biological_samples
+            for row in taxon_status
+            if str(row["taxon"]) in {"BAC_A", "BAC_B", "BAC_D", "FUN_B", "CON_A", "CON_B", "CON_C"}
+            and str(row["library_id"]).startswith(sample_id)
+        ],
+    )
+    write_tsv(
+        table_dir / "cross_assay_concordance.tsv",
+        ["biological_sample_id", "kingdom", "assay_pair", "presence_jaccard", "rank_agreement", "interpretation"],
+        [
+            {
+                "biological_sample_id": sample_id,
+                "kingdom": "Bacteria",
+                "assay_pair": "WMS-16S",
+                "presence_jaccard": "0.82" if environment_by_sample[sample_id] != "supply_air" else "0.68",
+                "rank_agreement": "genus_limited" if environment_by_sample[sample_id] in {"outdoor_air", "settled_dust"} else "species_supported",
+                "interpretation": "BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.",
+            }
+            for sample_id in biological_samples
+        ] + [
+            {
+                "biological_sample_id": sample_id,
+                "kingdom": "Fungi",
+                "assay_pair": "WMS-ITS",
+                "presence_jaccard": "0.88" if environment_by_sample[sample_id] in {"outdoor_air", "settled_dust"} else "0.60",
+                "rank_agreement": "reference_limited",
+                "interpretation": "FUN_B is designed as stronger ITS evidence than WMS evidence.",
+            }
+            for sample_id in biological_samples
+        ],
+    )
+    write_tsv(
+        table_dir / "alpha_diversity.tsv",
+        ["biological_sample_id", "environment", "assay", "observed_features", "shannon_surrogate"],
+        [
+            {
+                "biological_sample_id": sample_id,
+                "environment": environment_by_sample[sample_id],
+                "assay": assay,
+                "observed_features": {"supply_air": 4, "return_air": 6, "outdoor_air": 7, "settled_dust": 10}[environment_by_sample[sample_id]],
+                "shannon_surrogate": {"supply_air": "1.20", "return_air": "1.65", "outdoor_air": "1.90", "settled_dust": "2.25"}[environment_by_sample[sample_id]],
+            }
+            for sample_id in biological_samples
+            for assay in ASSAYS
+        ],
+    )
+    write_tsv(
+        table_dir / "differential_taxa.tsv",
+        ["taxon", "enriched_environment", "effect_direction", "evidence_note"],
+        [
+            {"taxon": "FUN_A", "enriched_environment": "outdoor_air", "effect_direction": "higher", "evidence_note": "Outdoor-associated fungal signal."},
+            {"taxon": "BAC_SKIN", "enriched_environment": "return_air", "effect_direction": "higher", "evidence_note": "Human-associated bacterial signature."},
+            {"taxon": "BAC_C", "enriched_environment": "supply_air", "effect_direction": "relative_enrichment", "evidence_note": "Filtration/low-diversity signature."},
+            {"taxon": "FUN_C", "enriched_environment": "settled_dust", "effect_direction": "higher", "evidence_note": "Mixed indoor/outdoor settled dust community."},
+        ],
+    )
+    write_tsv(
+        table_dir / "wms_pathways.tsv",
+        ["pathway_id", "expected_peak_environment", "interpretation"],
+        [
+            {"pathway_id": "PWY-AEROBIC-RESP", "expected_peak_environment": "all", "interpretation": "Core aerobic respiration signal."},
+            {"pathway_id": "PWY-PLANT-CARBON", "expected_peak_environment": "outdoor_air;settled_dust", "interpretation": "Plant-associated carbon metabolism."},
+            {"pathway_id": "PWY-SKIN-LIPID", "expected_peak_environment": "return_air", "interpretation": "Skin-associated lipid metabolism."},
+            {"pathway_id": "PWY-BIOFILM", "expected_peak_environment": "settled_dust", "interpretation": "Surface and dust biofilm potential."},
+            {"pathway_id": "PWY-METHANOGENESIS", "expected_peak_environment": "settled_dust", "interpretation": "Tracks the archaeal component."},
+            {"pathway_id": "PWY-FUNGAL-STRESS", "expected_peak_environment": "outdoor_air", "interpretation": "Fungal stress-response functions."},
+        ],
+    )
+    write_tsv(
+        table_dir / "ecological_tests.tsv",
+        ["test", "expected_result", "interpretation"],
+        [
+            {"test": "environment_permanova", "expected_result": "strong_environment_structure", "interpretation": "Four designed environmental states separate in beta diversity."},
+            {"test": "supply_air_richness", "expected_result": "lowest", "interpretation": "Supply air has the lowest biomass and diversity."},
+            {"test": "settled_dust_richness", "expected_result": "highest", "interpretation": "Settled dust has the richest mixed community."},
+        ],
+    )
+    figure_specs = [
+        ("figure_01_wms_qc_host_depletion", "WMS QC and host depletion", (19, 80, 130)),
+        ("figure_02_alpha_diversity", "Alpha diversity", (36, 120, 94)),
+        ("figure_03_bray_curtis_pcoa", "Bray-Curtis beta-diversity PCoA", (98, 90, 150)),
+        ("figure_04_contamination_scores", "Control-aware contamination scores", (156, 88, 62)),
+        ("figure_05_cross_assay_concordance", "WMS-16S and WMS-ITS concordance", (52, 110, 160)),
+        ("figure_06_evidence_classifications", "Integrated authenticity and cross-assay explanations", (95, 120, 70)),
+        ("figure_07_functional_pathways", "Functional pathway heatmap", (120, 80, 120)),
+        ("figure_08_differential_taxa", "Differential environmental taxa", (70, 125, 130)),
+    ]
+    for stem, title, color in figure_specs:
+        svg = (
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"675\" viewBox=\"0 0 1200 675\">\n"
+            f"<rect width=\"1200\" height=\"675\" fill=\"rgb({color[0]},{color[1]},{color[2]})\"/>\n"
+            "<rect x=\"72\" y=\"72\" width=\"1056\" height=\"531\" fill=\"white\" opacity=\"0.90\"/>\n"
+            f"<text x=\"100\" y=\"150\" font-family=\"Arial, sans-serif\" font-size=\"44\" fill=\"#0b2f62\">{title}</text>\n"
+            "<text x=\"100\" y=\"220\" font-family=\"Arial, sans-serif\" font-size=\"26\" fill=\"#234\">TRIARCHY showcase expected-output placeholder</text>\n"
+            "<text x=\"100\" y=\"280\" font-family=\"Arial, sans-serif\" font-size=\"22\" fill=\"#456\">Regenerate manuscript-grade figures from expected tables or production outputs.</text>\n"
+            "</svg>\n"
+        )
+        (figure_dir / f"{stem}.svg").parent.mkdir(parents=True, exist_ok=True)
+        (figure_dir / f"{stem}.svg").write_text(svg, encoding="ascii")
+        write_simple_png(figure_dir / f"{stem}.png", color)
+
+    (expected_dir / "FIGURE_LEGENDS.md").write_text(
+        "\n".join(f"## Figure {index}\n\n{title}.\n" for index, (_, title, _) in enumerate(figure_specs, 1)),
+        encoding="ascii",
+    )
+    (expected_dir / "DEMO_NARRATIVE.md").write_text(
+        "TRIARCHY recovered four distinct environmental microbial communities while identifying "
+        "several reasons why individual sequencing assays disagreed. Return-air samples contained "
+        "increased host DNA and human-associated microbial signatures, outdoor air was enriched for "
+        "fungal signals, supply air displayed reduced community complexity, and settled dust contained "
+        "the greatest mixed-community diversity. Control-aware integration identified reagent-, batch-, "
+        "and assay-specific contaminants while preserving authentic biological signals. Cross-assay "
+        "interpretation distinguished concordant observations from primer-limited, rank-limited, and "
+        "reference-limited detections rather than treating all assay disagreement as biological discordance.\n",
+        encoding="ascii",
+    )
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "TRIARCHY_showcase_report.html").write_text(
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>TRIARCHY Showcase Report</title>"
+        "<style>body{font-family:Arial,sans-serif;max-width:980px;margin:40px auto;line-height:1.5;color:#123}"
+        "table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd;padding:6px}</style></head><body>"
+        "<h1>TRIARCHY 30-minute showcase expected report</h1>"
+        "<p>This precomputed report summarizes the intended demonstration story for TRI-31.</p>"
+        "<h2>Designed conclusion</h2><p>Four environmental states separate while TRIARCHY explains host, reagent, batch, primer, rank, and reference limitations.</p>"
+        "<h2>Key expected classes</h2><table><tr><th>Feature</th><th>Expected interpretation</th></tr>"
+        "<tr><td>CON_A</td><td>probable contaminant</td></tr>"
+        "<tr><td>CON_B</td><td>cross-contamination candidate in EB02</td></tr>"
+        "<tr><td>CON_C</td><td>ITS-specific probable contaminant</td></tr>"
+        "<tr><td>BAC_D</td><td>assay-limited nondetection due to 16S primer bias</td></tr>"
+        "<tr><td>BAC_A/B</td><td>rank-limited agreement</td></tr>"
+        "<tr><td>FUN_B</td><td>reference-limited WMS evidence with stronger ITS support</td></tr>"
+        "</table></body></html>\n",
+        encoding="ascii",
+    )
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    (reference_dir / "mini_function_catalog.fasta").write_text(
+        "".join(
+            f">{pathway}\n{sequence_for(pathway, 'mini_function', 1, 180)}\n"
+            for pathway in ("PWY-AEROBIC-RESP", "PWY-PLANT-CARBON", "PWY-SKIN-LIPID", "PWY-BIOFILM", "PWY-METHANOGENESIS", "PWY-FUNGAL-STRESS")
+        ),
+        encoding="ascii",
+    )
+    write_tsv(
+        reference_dir / "mini_function_mapping.tsv",
+        ["pathway_id", "feature_family", "expected_peak_environment"],
+        [
+            {"pathway_id": "PWY-AEROBIC-RESP", "feature_family": "core_metabolism", "expected_peak_environment": "all"},
+            {"pathway_id": "PWY-PLANT-CARBON", "feature_family": "plant_carbon", "expected_peak_environment": "outdoor_air;settled_dust"},
+            {"pathway_id": "PWY-SKIN-LIPID", "feature_family": "skin_lipid", "expected_peak_environment": "return_air"},
+            {"pathway_id": "PWY-BIOFILM", "feature_family": "biofilm", "expected_peak_environment": "settled_dust"},
+            {"pathway_id": "PWY-METHANOGENESIS", "feature_family": "archaeal_methanogenesis", "expected_peak_environment": "settled_dust"},
+            {"pathway_id": "PWY-FUNGAL-STRESS", "feature_family": "fungal_stress", "expected_peak_environment": "outdoor_air"},
+        ],
+    )
+    summary = {
+        "dataset_id": "TRI-31",
+        "name": "TRIARCHY_SHOWCASE_30MIN_v1.0",
+        "biological_samples": len(biological_samples),
+        "experimental_controls": 7,
+        "sequencing_libraries": len(samples),
+        "designed_full_scale_paired_end_reads": 2526000,
+        "environments": sorted(set(environment_by_sample.values())),
+        "figures": len(figure_specs),
+        "tables": 10,
+        "home_computer_target_minutes": "20-45",
+    }
+    (root / "bundle_summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="ascii",
+    )
+
+
 def control_stage(name: str) -> str:
     if "FIELD" in name:
         return "field"
@@ -693,25 +1041,32 @@ def generate(dataset: Dataset) -> None:
                 "library_id": library_id,
                 "expected_qc_status": qc,
                 "expected_read_pairs": total if not single else 0,
-                "expected_host_fraction": "0.90" if qc == "host_dominated" else "0.20" if "host_20pct" in qc else "0.00",
-                "expected_action": "exclude" if qc in {"failed", "empty", "mismatched_pairs"} else "qualify" if qc in {"low_depth", "host_dominated", "forward_only", "no_target_template"} else "retain",
+                "expected_host_fraction": "0.90" if qc == "host_dominated" else "0.32" if qc == "host_32pct" else "0.20" if "host_20pct" in qc else "0.00",
+                "expected_action": "exclude" if qc in {"failed", "empty", "mismatched_pairs"} else "qualify" if qc in {"low_depth", "host_dominated", "host_32pct", "forward_only", "no_target_template"} else "retain",
             })
             for taxon, fraction in profile.items():
                 info = TAXA[taxon]
-                status = "probable_contaminant" if taxon in CONTAMINANTS else (
-                    "reference_held_out" if info.reference_status != "reference_seen" else "concordant"
-                )
+                if dataset.mode == "showcase" and taxon == "BAC_D":
+                    status = "assay_limited_nondetection"
+                elif dataset.mode == "showcase" and taxon in {"BAC_A", "BAC_B"}:
+                    status = "rank_limited_agreement"
+                elif dataset.mode == "showcase" and taxon == "FUN_B":
+                    status = "reference_limited"
+                else:
+                    status = "probable_contaminant" if taxon in CONTAMINANTS else (
+                        "reference_held_out" if info.reference_status != "reference_seen" else "concordant"
+                    )
                 expected_taxa.append({
                     "library_id": library_id, "biological_sample_id": specimen.name,
                     "assay": assay, "taxon": taxon, "kingdom": info.kingdom,
-                    "genus": info.genus, "expected_rank": "genus" if taxon in {"Escherichia_coli", "Shigella_flexneri"} and assay == "16S" else "species",
+                    "genus": info.genus, "expected_rank": "genus" if taxon in {"Escherichia_coli", "Shigella_flexneri", "BAC_A", "BAC_B"} and assay == "16S" else "species",
                     "expected_fraction": f"{fraction:.10f}",
                     "truth_status": "contaminant" if taxon in CONTAMINANTS else "authentic",
                 })
                 taxon_status.append({
                     "library_id": library_id, "taxon": taxon,
                     "expected_cross_assay_status": status,
-                    "supported_comparison_rank": "genus" if assay in {"16S", "ITS"} and dataset.mode == "harmonization" else "species",
+                    "supported_comparison_rank": "genus" if assay in {"16S", "ITS"} and dataset.mode == "harmonization" else "genus" if dataset.mode == "showcase" and taxon in {"BAC_A", "BAC_B"} else "species",
                     "reason": info.reference_status if status == "reference_held_out" else status,
                 })
             if assay == "WMS" and specimen.role == "biological":
@@ -723,21 +1078,66 @@ def generate(dataset: Dataset) -> None:
                 })
 
             if specimen.role == "biological":
-                candidates = controls_by_batch_assay.get((specimen.batch, assay), [])
-                used_stages: set[str] = set()
-                for control in candidates:
-                    stage = control_stage(control.name)
-                    if stage in used_stages or (stage == "pcr" and assay == "WMS"):
-                        continue
-                    used_stages.add(stage)
+                if dataset.mode == "showcase":
                     controls.append({
                         "library_id": library_id,
-                        "control_library_id": f"{control.name}_{assay}",
-                        "control_stage": stage,
-                        "relationship": "paired",
-                        "priority": len(used_stages),
-                        "reason": f"batch-local {stage} control",
+                        "control_library_id": f"FIELD_BLANK_{assay}",
+                        "control_stage": "field",
+                        "relationship": "run_level",
+                        "priority": 1,
+                        "reason": "showcase field blank shared across environmental sampling states",
                     })
+                    controls.append({
+                        "library_id": library_id,
+                        "control_library_id": f"{'EB02' if specimen.batch == 'B02' else 'EB01'}_{assay}",
+                        "control_stage": "extraction",
+                        "relationship": "same_batch",
+                        "priority": 2,
+                        "reason": "showcase batch-specific extraction blank",
+                    })
+                    if assay == "WMS":
+                        controls.append({
+                            "library_id": library_id,
+                            "control_library_id": "WMS_LIB_BLANK_WMS",
+                            "control_stage": "library",
+                            "relationship": "run_level",
+                            "priority": 3,
+                            "reason": "showcase WMS library blank",
+                        })
+                    elif assay == "16S":
+                        controls.append({
+                            "library_id": library_id,
+                            "control_library_id": "PCR_BLANK_16S_16S",
+                            "control_stage": "pcr",
+                            "relationship": "run_level",
+                            "priority": 3,
+                            "reason": "showcase 16S PCR blank",
+                        })
+                    elif assay == "ITS":
+                        controls.append({
+                            "library_id": library_id,
+                            "control_library_id": "PCR_BLANK_ITS_ITS",
+                            "control_stage": "pcr",
+                            "relationship": "run_level",
+                            "priority": 3,
+                            "reason": "showcase ITS PCR blank",
+                        })
+                else:
+                    candidates = controls_by_batch_assay.get((specimen.batch, assay), [])
+                    used_stages: set[str] = set()
+                    for control in candidates:
+                        stage = control_stage(control.name)
+                        if stage in used_stages or (stage == "pcr" and assay == "WMS"):
+                            continue
+                        used_stages.add(stage)
+                        controls.append({
+                            "library_id": library_id,
+                            "control_library_id": f"{control.name}_{assay}",
+                            "control_stage": stage,
+                            "relationship": "paired",
+                            "priority": len(used_stages),
+                            "reason": f"batch-local {stage} control",
+                        })
 
     write_tsv(metadata_dir / "samples.tsv", SAMPLE_FIELDS, samples)
     write_tsv(metadata_dir / "control_relationships.tsv", CONTROL_FIELDS, controls)
@@ -823,7 +1223,7 @@ def generate(dataset: Dataset) -> None:
         ["taxon", "contamination_pattern", "stage", "expected_batches", "expected_modalities"],
         [{
             "taxon": name, "contamination_pattern": pattern, "stage": stage,
-            "expected_batches": "B02" if pattern == "batch_B02" else "all",
+            "expected_batches": "B02" if "B02" in pattern else "all",
             "expected_modalities": "ITS" if TAXA[name].kingdom == "Fungi" else "WMS,16S",
         } for name, (pattern, stage) in CONTAMINANTS.items()],
     )
@@ -874,6 +1274,8 @@ def generate(dataset: Dataset) -> None:
         f">TRIARCHY_ARTIFICIAL_HOST\n{sequence_for('artificial_host', 'host', 1, 1000)}\n",
         encoding="ascii",
     )
+    if dataset.mode == "showcase":
+        write_showcase_outputs(root, samples, controls, sample_qc, expected_taxa, taxon_status, pathways)
     assertions = {
         "dataset": dataset.dataset_id,
         "schema_version": "1.0",
@@ -910,6 +1312,8 @@ def generate(dataset: Dataset) -> None:
         "copy_number_assumptions": "community_members.tsv",
         "reference_database_versions": {"Kraken2": "standard_frozen_2026_01", "SILVA": "138.2", "EUKARYOME": "2.0-99pct", "HUMAnN": "3.9"},
         "library_count": len(samples),
+        "sample_count": len({row["biological_sample_id"] for row in samples}),
+        "designed_full_scale_paired_end_reads": 2526000 if dataset.mode == "showcase" else None,
         "purpose": dataset.purpose,
         "limitations": [
             "Repository-sized reads exercise software contracts; publication-scale reads must be generated from frozen genomes.",
@@ -924,13 +1328,23 @@ def generate(dataset: Dataset) -> None:
         "This is an executable design surrogate, not empirical laboratory or field data. "
         if dataset.provenance_class != "synthetic" else ""
     )
+    if dataset.mode == "showcase":
+        qualifier = (
+            "This is the repository-sized implementation of the TRIARCHY 30-minute showcase design. "
+            "It includes the full 19-sample, 51-library metadata design and expected-output bundle; "
+            "the committed FASTQs are scaled down for Git and CI while the full-scale target is "
+            "2,526,000 paired-end reads. "
+        )
     (root / "README.md").write_text(
-        f"# {dataset.dataset_id} — {dataset.title}\n\n{dataset.purpose}\n\n"
+        f"# {dataset.dataset_id} - {dataset.title}\n\n{dataset.purpose}\n\n"
         f"{qualifier}The deterministic fixture contains {len(samples)} libraries, "
         f"{len(controls)} batch-local control links, paired or explicitly single-end FASTQs, "
         "assay-specific abundance scales, read origins, ASV truth, artificial references, "
         "precomputed profiles, machine-readable assertions, taxonomy mappings, contamination "
         "truth, QC expectations, pathways, checksums, and provenance.\n\n"
+        "Showcase expected outputs live under `expected_outputs/`; a precomputed narrative "
+        "HTML report lives under `report/`; mini functional demo references live under "
+        "`references/mini_function_catalog.fasta` and `references/mini_function_mapping.tsv`.\n\n"
         "Regenerate from the repository root:\n\n```bash\n"
         f"python3 scripts/generate_benchmark_datasets.py --dataset {dataset.dataset_id}\n"
         "```\n",

@@ -30,7 +30,7 @@ DEFAULT_PERFORMANCE = {
     ("ITS", "Fungi"): dict(reliability=.90, minimum_depth=5_000, reference_coverage=.90, false_positive_rate=.01),
 }
 DEFAULT_POLICY: dict[str, Any] = {
-    "model_version": "evidence-v3.0",
+    "model_version": "triarchy-authenticity-v1.0",
     "prior_presence": .25,
     "contaminant_threshold": .65,
     "cross_contamination_threshold": .45,
@@ -41,6 +41,10 @@ DEFAULT_POLICY: dict[str, Any] = {
     "minimum_mapping_confidence": .50,
     "present_score_threshold": .75,
     "absent_score_threshold": .20,
+    "authenticity_supported_threshold": .80,
+    "authenticity_absent_threshold": .20,
+    "indeterminate_ci_overlap_low": .20,
+    "indeterminate_ci_overlap_high": .80,
     "calibration": {
         "method": "piecewise_linear",
         "status": "synthetic_only_not_empirically_calibrated",
@@ -58,11 +62,17 @@ EVIDENCE_FIELDS = [
     "its_measured", "its_detected", "its_library_depth", "its_detection_power",
     "its_reference_coverage", "its_evidence_score",
     "abundance_support", "taxonomic_resolution_support", "mapping_support",
-    "assay_reliability", "control_evidence", "contamination_probability",
-    "batch_localization_score", "presence_score", "probability_authentic",
-    "calibration_status", "biological_state", "sample_evidence_rank",
-    "global_evidence_rank", "classification", "discordance_reason",
-    "decision_reason", "model_version",
+    "assay_reliability", "control_evidence", "field_contamination_score",
+    "extraction_contamination_score", "pcr_contamination_score",
+    "library_contamination_score", "run_contamination_score",
+    "other_control_contamination_score", "probable_contamination_source",
+    "contamination_probability", "batch_localization_score",
+    "taxonomic_compatibility_score", "taxonomic_compatibility_status",
+    "biological_authenticity", "authenticity_ci_low", "authenticity_ci_high",
+    "authenticity_uncertainty", "authenticity_state", "cross_assay_status",
+    "presence_score", "probability_authentic", "calibration_status",
+    "biological_state", "sample_evidence_rank", "global_evidence_rank",
+    "classification", "discordance_reason", "decision_reason", "model_version",
 ]
 
 
@@ -158,6 +168,97 @@ def calibrated_probability(score: float, calibration: dict[str, Any] | None) -> 
             fraction = (score - left) / max(right - left, 1e-12)
             return clamp(low + fraction * (high - low)), str(calibration.get("status", "unspecified"))
     return clamp(values[-1]), str(calibration.get("status", "unspecified"))
+
+
+def stage_contamination_scores(calls: list[dict[str, str]]) -> dict[str, float]:
+    fields = {
+        "field": "field_contamination_score",
+        "extraction": "extraction_contamination_score",
+        "pcr": "pcr_contamination_score",
+        "library": "library_contamination_score",
+        "run": "run_contamination_score",
+        "other": "other_control_contamination_score",
+    }
+    return {
+        stage: max((number(row.get(field)) for row in calls), default=0.0)
+        for stage, field in fields.items()
+    }
+
+
+def strongest_contamination_source(stage_scores: dict[str, float], batch_score: float) -> str:
+    candidates = dict(stage_scores)
+    candidates["batch"] = batch_score
+    stage, score = max(candidates.items(), key=lambda item: item[1], default=("none", 0.0))
+    return stage if score > 0 else "none"
+
+
+def taxonomic_compatibility(
+    calls: list[dict[str, str]],
+    components: dict[str, dict[str, float | bool]],
+    expected: tuple[str, ...],
+) -> tuple[float, str]:
+    expected_calls = [row for row in calls if row.get("assay") in expected]
+    if not expected_calls:
+        return 0.0, "no_comparable_assignments"
+    if any(
+        row.get("cross_assay_compatibility", "").casefold() == "conflict"
+        or row.get("mapping_method", "").casefold() in {"incompatible", "conflict"}
+        for row in expected_calls
+    ):
+        return 0.0, "incompatible"
+    detected_expected = [assay for assay in expected if components[assay]["detected"]]
+    if len(detected_expected) < 2:
+        return 0.5, "single_assay_only"
+    taxon_ids = {row.get("triarchy_taxon_id", "") for row in expected_calls}
+    names = {row.get("canonical_name", "").casefold() for row in expected_calls}
+    levels = {
+        int(components[assay]["rank_level"])
+        for assay in detected_expected
+    }
+    mapping = min(
+        (number(row.get("mapping_confidence"), 1) for row in expected_calls),
+        default=1,
+    )
+    if len(taxon_ids) == 1 or len(names) == 1:
+        if len(levels) == 1:
+            return clamp(mapping), "exact_or_canonical_agreement"
+        return clamp(0.85 * mapping), "hierarchical_agreement"
+    return clamp(0.25 * mapping), "ambiguous_compatibility"
+
+
+def authenticity_interval(probability: float, evidence_units: float) -> tuple[float, float, float]:
+    n_eff = max(2.0, 2.0 + evidence_units)
+    stderr = math.sqrt(max(probability * (1 - probability), 1e-9) / n_eff)
+    half_width = 1.96 * stderr
+    low = clamp(probability - half_width)
+    high = clamp(probability + half_width)
+    return low, high, half_width
+
+
+def parent_cross_assay_status(classification: str) -> str:
+    if classification == "concordant_detection":
+        return "concordant"
+    if classification in {"single_assay_credible", "assay_limited_nondetection"}:
+        return "assay_limited"
+    if classification in {"rank_limited_agreement", "reference_limited"}:
+        return "taxonomy_limited"
+    if classification in {"probable_contaminant", "cross_contamination_candidate"}:
+        return "contamination_associated"
+    if classification == "genuine_discordance":
+        return "genuine_discordance"
+    return "indeterminate"
+
+
+def authenticity_state(probability: float, low: float, high: float, policy: dict[str, Any]) -> str:
+    supported = number(policy["authenticity_supported_threshold"])
+    absent = number(policy["authenticity_absent_threshold"])
+    overlap_low = number(policy["indeterminate_ci_overlap_low"])
+    overlap_high = number(policy["indeterminate_ci_overlap_high"])
+    if probability >= supported and low >= overlap_high:
+        return "biologically_supported"
+    if probability <= absent and high <= overlap_low:
+        return "not_supported"
+    return "indeterminate"
 
 
 def library_depths(rows: list[dict[str, str]]) -> dict[str, float]:
@@ -271,7 +372,20 @@ def infer_evidence(
             (number(row.get("batch_localization_score")) for row in calls),
             default=0,
         )
+        max_batch_contamination = max(
+            (number(row.get("batch_contamination_score")) for row in calls),
+            default=0,
+        )
+        stage_scores = stage_contamination_scores(calls)
+        source_batch_score = max_batch_contamination
+        if not source_batch_score and (
+            max_contamination >= number(policy["cross_contamination_threshold"])
+            and max_batch >= number(policy["batch_localization_threshold"])
+        ):
+            source_batch_score = max_batch
+        strongest_source = strongest_contamination_source(stage_scores, source_batch_score)
         log_odds = prior_log_odds
+        evidence_units = 0.0
         for assay in ASSAYS:
             assay_calls = [row for row in calls if row["assay"] == assay]
             detected = bool(assay_calls)
@@ -318,12 +432,21 @@ def infer_evidence(
             abundance_support = 1 / abundance_rank if abundance_rank else 0
             resolution = rank_level / 8
             contamination = clamp(number(call.get("contamination_probability")) if call else 0)
+            primer = clamp(number(
+                call.get("primer_compatibility_score", call.get("primer_compatibility", 1))
+            ) if call else 1)
             assay_evidence = (
                 detection_support * math.sqrt(abundance_support)
-                * resolution * mapping * reliability * (1 - contamination)
+                * resolution * mapping * reliability * primer * (1 - contamination)
             )
             false_positive = clamp(number(settings["false_positive_rate"], .01))
+            false_positive = clamp(
+                false_positive
+                + 0.25 * contamination
+                + 0.20 * max(stage_scores.values(), default=0.0)
+            )
             if assay in expected:
+                evidence_units += int(measured) + int(detected) + power + mapping + reference
                 if detected:
                     log_odds += 4 * assay_evidence + math.log((power + .05) / (false_positive + .05))
                 elif measured:
@@ -334,28 +457,35 @@ def infer_evidence(
                 "rank_level": rank_level, "mapping": mapping,
                 "abundance": abundance_support, "resolution": resolution,
                 "detection": detection_support, "evidence": assay_evidence,
+                "primer": primer,
             }
         log_odds -= 3 * max_contamination
-        presence_score = sigmoid(log_odds)
+        log_odds -= 2 * max(stage_scores.values(), default=0.0)
+        biological_authenticity = sigmoid(log_odds)
+        ci_low, ci_high, ci_half_width = authenticity_interval(
+            biological_authenticity, evidence_units
+        )
+        auth_state = authenticity_state(
+            biological_authenticity, ci_low, ci_high, policy
+        )
         probability, calibration_status = calibrated_probability(
-            presence_score, policy.get("calibration")
+            biological_authenticity, policy.get("calibration")
         )
         classification, reason = classify_reason(
             calls, components, expected, max_contamination, max_batch, policy
         )
+        compatibility_score, compatibility_status = taxonomic_compatibility(
+            calls, components, expected
+        )
+        cross_assay_status = parent_cross_assay_status(classification)
         detected_levels = [
             int(components[assay]["rank_level"])
             for assay in expected if components[assay]["detected"]
         ]
         comparison_level = min(detected_levels, default=0)
-        if classification in {
-            "probable_contaminant", "cross_contamination_candidate",
-            "genuine_discordance",
-        }:
-            state = "indeterminate"
-        elif probability >= number(policy["present_score_threshold"]):
+        if auth_state == "biologically_supported":
             state = "present"
-        elif not calls and probability <= number(policy["absent_score_threshold"]):
+        elif auth_state == "not_supported":
             state = "absent"
         else:
             state = "indeterminate"
@@ -391,9 +521,24 @@ def infer_evidence(
                 f"{assay}:{fmt(number(components[assay]['reliability']))}" for assay in expected
             ),
             "control_evidence": "linked_stage_specific",
+            "field_contamination_score": fmt(stage_scores["field"]),
+            "extraction_contamination_score": fmt(stage_scores["extraction"]),
+            "pcr_contamination_score": fmt(stage_scores["pcr"]),
+            "library_contamination_score": fmt(stage_scores["library"]),
+            "run_contamination_score": fmt(stage_scores["run"]),
+            "other_control_contamination_score": fmt(stage_scores["other"]),
+            "probable_contamination_source": strongest_source,
             "contamination_probability": fmt(max_contamination),
             "batch_localization_score": fmt(max_batch),
-            "presence_score": fmt(presence_score),
+            "taxonomic_compatibility_score": fmt(compatibility_score),
+            "taxonomic_compatibility_status": compatibility_status,
+            "biological_authenticity": fmt(biological_authenticity),
+            "authenticity_ci_low": fmt(ci_low),
+            "authenticity_ci_high": fmt(ci_high),
+            "authenticity_uncertainty": fmt(ci_half_width),
+            "authenticity_state": auth_state,
+            "cross_assay_status": cross_assay_status,
+            "presence_score": fmt(biological_authenticity),
             "probability_authentic": fmt(probability),
             "calibration_status": calibration_status,
             "biological_state": state,
@@ -445,8 +590,11 @@ def run_inference(
             },
             "output_rows": len(rows),
             "interpretation": (
-                "probability_authentic is calibrated only to the status named in "
-                "calibration.status; synthetic calibration is not empirical validation"
+                "biological_authenticity is the stage-I posterior-style authenticity "
+                "estimate. cross_assay_status is the stage-II explanation. "
+                "probability_authentic is retained for compatibility and is calibrated "
+                "only to the status named in calibration.status; synthetic calibration "
+                "is not empirical validation."
             ),
         }
         model_output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -491,7 +639,7 @@ def fit_calibration(evidence_path: Path, truth_path: Path, output: Path) -> None
     for row in read_tsv(evidence_path):
         key = (row["biological_sample_id"], row["canonical_name"])
         if key in truth:
-            scores.append(number(row["presence_score"]))
+            scores.append(number(row.get("biological_authenticity") or row.get("presence_score")))
             labels.append(truth[key])
     if not scores or len(set(labels)) < 2:
         raise ValueError("calibration requires matched positive and negative truth observations")
@@ -522,7 +670,8 @@ def evaluate(evidence_path: Path, truth_path: Path, output: Path) -> None:
         fp += int(not actual and predicted)
         fn += int(actual and not predicted)
         tn += int(not actual and not predicted)
-        brier_values.append((number(row["probability_authentic"]) - int(actual)) ** 2)
+        calibration_score = row.get("biological_authenticity", row.get("probability_authentic", ""))
+        brier_values.append((number(calibration_score) - int(actual)) ** 2)
     precision = tp / (tp + fp) if tp + fp else 0
     recall = tp / (tp + fn) if tp + fn else 0
     result = {

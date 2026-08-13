@@ -1,0 +1,5 @@
+taxon	enriched_environment	effect_direction	evidence_note
+FUN_A	outdoor_air	higher	Outdoor-associated fungal signal.
+BAC_SKIN	return_air	higher	Human-associated bacterial signature.
+BAC_C	supply_air	relative_enrichment	Filtration/low-diversity signature.
+FUN_C	settled_dust	higher	Mixed indoor/outdoor settled dust community.

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100" role="img" aria-label="Supplementary Figure S6 environmental design">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#9aa8b6"/>
+</marker>
+</defs>
+<rect width="1800" height="1100" fill="white"/>
+<text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#17212b" text-anchor="start">Supplementary Figure S6. Matched environmental design surrogate</text>
+<text x="90" y="150" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#17212b" text-anchor="start">TRI-30 biological samples by material</text>
+<rect x="120" y="230" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="230" width="540.0" height="42" rx="4" fill="#d9ece9" stroke="#d9ece9" stroke-width="1.2"/>
+<text x="120" y="222" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">active_air</text>
+<text x="668" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">12</text>
+<rect x="120" y="325" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="325" width="540.0" height="42" rx="4" fill="#d9ece9" stroke="#d9ece9" stroke-width="1.2"/>
+<text x="120" y="317" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">air_filter</text>
+<text x="668" y="363" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">12</text>
+<rect x="120" y="420" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="420" width="540.0" height="42" rx="4" fill="#d9ece9" stroke="#d9ece9" stroke-width="1.2"/>
+<text x="120" y="412" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">settled_dust</text>
+<text x="668" y="458" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">12</text>
+<rect x="120" y="515" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="515" width="540.0" height="42" rx="4" fill="#d9ece9" stroke="#d9ece9" stroke-width="1.2"/>
+<text x="120" y="507" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">surface_swab</text>
+<text x="668" y="553" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">12</text>
+<text x="900" y="150" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#17212b" text-anchor="start">Samples by environment</text>
+<rect x="920" y="230" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="230" width="540.0" height="42" rx="4" fill="#2f6f73" stroke="#2f6f73" stroke-width="1.2"/>
+<text x="920" y="222" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">indoor_return</text>
+<text x="1468" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">16</text>
+<rect x="920" y="325" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="325" width="540.0" height="42" rx="4" fill="#2f6f73" stroke="#2f6f73" stroke-width="1.2"/>
+<text x="920" y="317" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">indoor_supply</text>
+<text x="1468" y="363" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">16</text>
+<rect x="920" y="420" width="540" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="420" width="540.0" height="42" rx="4" fill="#2f6f73" stroke="#2f6f73" stroke-width="1.2"/>
+<text x="920" y="412" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">outdoor_intake</text>
+<text x="1468" y="458" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">16</text>
+<text x="930" y="800" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="400" fill="#b56b00" text-anchor="middle">TRI-30 is an executable design surrogate until</text>
+<text x="930" y="824" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="400" fill="#b56b00" text-anchor="middle">matched field data are analyzed.</text>
+</svg>

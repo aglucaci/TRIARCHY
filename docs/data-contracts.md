@@ -34,7 +34,7 @@ One row represents one sequenced library. A biological specimen assayed by WMS,
 Identifiers must be stable strings. Paths must exist and assay values are
 case-sensitive.
 
-## Sample–control edges
+## Sample-control edges
 
 Controls are represented as a graph rather than a single generic `control_id`.
 One row links one biological library to one experimentally relevant control.
@@ -118,20 +118,39 @@ One row represents a biological sample and harmonized taxon.
 | `mapping_support` | Minimum mapping confidence among supporting calls |
 | `assay_reliability` | Kingdom-specific assay weights used |
 | `control_evidence` | Summary contamination evidence |
-| `presence_score` | Uncalibrated evidence-v3 presence score |
-| `probability_authentic` | Score after the serialized calibration mapping |
+| `field_contamination_score` | False-detection evidence linked to field controls |
+| `extraction_contamination_score` | False-detection evidence linked to extraction controls |
+| `pcr_contamination_score` | False-detection evidence linked to PCR controls |
+| `library_contamination_score` | False-detection evidence linked to library controls |
+| `run_contamination_score` | False-detection evidence linked to sequencing/run controls |
+| `other_control_contamination_score` | False-detection evidence linked to other declared controls |
+| `probable_contamination_source` | Stage or batch with the strongest contamination evidence |
+| `taxonomic_compatibility_score` | Compatibility score across kingdom-appropriate assay calls |
+| `taxonomic_compatibility_status` | Exact/canonical, hierarchical, single-assay, ambiguous, or incompatible compatibility state |
+| `biological_authenticity` | Stage-I posterior-style estimate that the taxon is biologically authentic |
+| `authenticity_ci_low` | Lower approximate uncertainty bound for `biological_authenticity` |
+| `authenticity_ci_high` | Upper approximate uncertainty bound for `biological_authenticity` |
+| `authenticity_uncertainty` | Width of the approximate authenticity interval |
+| `authenticity_state` | `biologically_supported`, `not_supported`, or `indeterminate` |
+| `cross_assay_status` | Stage-II parent explanation class |
+| `presence_score` | Legacy alias mirroring `biological_authenticity` for older consumers |
+| `probability_authentic` | Legacy calibrated-score column retained for compatibility |
 | `calibration_status` | Scope of calibration, including explicit non-empirical status |
 | `biological_state` | `present`, `absent`, or `indeterminate` |
 | `sample_evidence_rank` | Descending score rank within a biological sample |
 | `global_evidence_rank` | Descending score rank across the run |
-| `classification` | One of the defined evidence classes |
+| `classification` | Detailed evidence class retained for compatibility and audit trails |
 | `discordance_reason` | Resolution, scope, control, direction, or depth explanation |
 | `model_version` | Version of the decision policy or model |
 
 An absent assay is different from a measured non-detection and must remain
 distinguishable in serialized output.
 
-The valid classifications are `concordant_detection`,
+The valid `cross_assay_status` values are `concordant`, `assay_limited`,
+`taxonomy_limited`, `contamination_associated`, `genuine_discordance`, and
+`indeterminate`.
+
+The valid detailed `classification` values are `concordant_detection`,
 `single_assay_credible`, `assay_limited_nondetection`,
 `rank_limited_agreement`, `reference_limited`, `probable_contaminant`,
 `cross_contamination_candidate`, `genuine_discordance`, and `indeterminate`.
@@ -167,7 +186,7 @@ Each run records a JSON document containing:
 - command and complete resolved configuration;
 - container digests and software versions;
 - database names, releases, checksums, and retrieval dates;
-- checksums for manifests and sample–control edges;
+- checksums for manifests and sample-control edges;
 - start and completion timestamps;
 - task-level CPU, memory, storage, and runtime usage.
 

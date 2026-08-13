@@ -1,6 +1,6 @@
-# TRI-00 — Metadata contract tests
+# TRI-00 - Metadata contract tests
 
-TRI-00 validates the sample manifest and sample–control graph without requiring
+TRI-00 validates the sample manifest and sample-control graph without requiring
 FASTQs. Paths are deliberately synthetic; file existence belongs to the
 execution preflight rather than this structural contract test.
 

@@ -15,6 +15,7 @@ INSTALL_CPUS=4
 ENVIRONMENT_MANAGER="${TRIARCHY_ENV_MANAGER:-mamba}"
 SKIP_NEXTFLOW=false
 SKIP_DEPENDENCIES=false
+LOCKED_DEPENDENCIES=false
 SKIP_DATABASES=false
 SKIP_TESTS=false
 ASSUME_YES=false
@@ -52,6 +53,8 @@ Options:
   --cpus N              Indexing threads for databases built locally (default: 4)
   --skip-nextflow       Do not download or validate Nextflow
   --skip-dependencies   Do not create/update the Conda environment
+  --locked-dependencies Install dependencies from environment.lock.txt instead
+                        of solving environment.yml
   --skip-databases      Do not download or build references
   --skip-tests          Do not run validation and unit tests
   --yes                 Accept the large standard database installation
@@ -139,6 +142,10 @@ while (($#)); do
             ;;
         --skip-dependencies)
             SKIP_DEPENDENCIES=true
+            shift
+            ;;
+        --locked-dependencies)
+            LOCKED_DEPENDENCIES=true
             shift
             ;;
         --skip-databases)
@@ -276,6 +283,7 @@ fi
 if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
     environment_file="${SCRIPT_DIR}/environment.yml"
     [[ -f "${environment_file}" ]] || die "missing ${environment_file}"
+    environment_lock="${SCRIPT_DIR}/environment.lock.txt"
 
     if [[ "${ENVIRONMENT_MANAGER}" == "auto" ]]; then
         if command -v mamba >/dev/null 2>&1; then
@@ -294,7 +302,35 @@ if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
     fi
 
     info "Using ${environment_manager} for the bioinformatics environment"
-    if [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
+    if [[ "${LOCKED_DEPENDENCIES}" == true ]]; then
+        [[ -f "${environment_lock}" ]] ||
+            die "missing ${environment_lock}; run without --locked-dependencies to solve environment.yml"
+        if [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
+            info "Installing pinned dependency set into ${ENV_PREFIX}"
+            if [[ "${ASSUME_YES}" == true ]]; then
+                "${environment_manager}" install \
+                    --prefix "${ENV_PREFIX}" \
+                    --file "${environment_lock}" \
+                    --yes
+            else
+                "${environment_manager}" install \
+                    --prefix "${ENV_PREFIX}" \
+                    --file "${environment_lock}"
+            fi
+        else
+            info "Creating pinned bioinformatics environment at ${ENV_PREFIX}"
+            if [[ "${ASSUME_YES}" == true ]]; then
+                "${environment_manager}" create \
+                    --prefix "${ENV_PREFIX}" \
+                    --file "${environment_lock}" \
+                    --yes
+            else
+                "${environment_manager}" create \
+                    --prefix "${ENV_PREFIX}" \
+                    --file "${environment_lock}"
+            fi
+        fi
+    elif [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
         info "Updating bioinformatics environment at ${ENV_PREFIX}"
         if [[ "${ASSUME_YES}" == true ]]; then
             "${environment_manager}" env update \

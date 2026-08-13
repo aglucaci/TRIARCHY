@@ -2,6 +2,18 @@
 
 ## Installation
 
+For a lightweight local check that avoids the full Conda environment and all
+reference databases, install only Nextflow and run the deterministic lite mode:
+
+```bash
+./install.sh --skip-dependencies --skip-databases --skip-tests --yes
+./run_triarchy.sh --lite
+```
+
+Lite mode writes to `results/lite` and is intended for laptop/WSL smoke tests,
+report inspection, and development. It is not suitable for biological
+interpretation; see [lightweight.md](lightweight.md).
+
 On an Apple-silicon Mac, `install.sh` runs `brew install bowtie2 bracken`
 (Bracken brings Kraken2), then installs Conda activation hooks that prepend
 the native formula binaries while the TRIARCHY environment is active. This
@@ -64,7 +76,7 @@ resumable HTTPS. The installer verifies the official MD5 checksum before
 extraction, then verifies every extracted Kraken2 and Bracken file. PlusPFP is
 broader than Kraken2's preset named `standard`: it includes archaeal,
 bacterial, viral, fungal, protozoan, plant, human, plasmid, and UniVec_Core
-libraries so fungal WMS–ITS evidence is not silently omitted.
+libraries so fungal WMS-ITS evidence is not silently omitted.
 
 For an environment that already exists, configure only the native-tool bridge:
 
@@ -120,7 +132,7 @@ deployment-specific container and cluster configurations.
 
 - `--samples`: sample manifest defined in
   [data-contracts.md](data-contracts.md);
-- `--controls`: sample–control edge table;
+- `--controls`: sample-control edge table;
 - `--host_index`: Bowtie2 host-index prefix;
 - `--kraken2_db`: Kraken2/Bracken database directory;
 - `--humann_db`: HUMAnN ChocoPhlAn directory;
@@ -146,6 +158,24 @@ python3 workflow/scripts/triarchy_integrate.py fit-calibration \
 
 Relative FASTQ paths are resolved relative to the sample manifest. Reference
 paths are resolved before processes enter their isolated work directories.
+
+## Preflight validation
+
+Run preflight checks before scheduling a production job:
+
+```bash
+bin/triarchy validate \
+  --input /data/study/samples.tsv \
+  --paired-controls /data/study/control_relationships.tsv \
+  --databases conf/databases.example.yml \
+  --database-destination /refs/triarchy \
+  --report results/preflight.json
+```
+
+The command validates the metadata contract, verifies FASTQ paths, checks
+database paths, and verifies file checksums when `sha256` values are present in
+the manifest. Use `--skip-fastq-check` only for deterministic stub fixtures
+whose FASTQ paths are intentionally synthetic.
 
 ## Production command
 
@@ -190,34 +220,42 @@ nextflow run main.nf -profile slurm -c conf/slurm.config ...
 The repository does not ship fictional universal cluster or image settings.
 Add deployment-specific configuration under `conf/` and record it with the run.
 
+## Database manifests
+
+`conf/databases.example.yml` documents the reference-manifest shape expected by
+`bin/triarchy databases check`. Production releases should replace the example
+paths with the exact submitted reference locations and checksums. A manifest
+entry should include `id`, `kind`, `version`, `path`, `required`, and, for
+single files, `sha256`.
+
 ## Outputs
 
 ```text
 results/
-├── qc/
-│   └── library_qc.tsv
-├── profiles/
-│   ├── control_annotated/
-│   │   ├── taxa.tsv
-│   │   └── functions.tsv
-│   ├── high_confidence/taxa.tsv
-│   └── sample_confidence.tsv
-├── integrated/
-│   ├── harmonized_taxa.tsv
-│   ├── taxonomy_crosswalk.tsv
-│   ├── taxon_evidence.tsv
-│   ├── evidence_model.json
-│   └── cross_assay_concordance.tsv
-├── diversity/
-│   ├── alpha_diversity.tsv
-│   └── beta_diversity.tsv
-├── pipeline_info/
-│   ├── provenance.json
-│   ├── trace.tsv
-│   ├── timeline.html
-│   ├── execution_report.html
-│   └── dag.html
-└── triarchy_report.html
+|-- qc/
+|   `-- library_qc.tsv
+|-- profiles/
+|   |-- control_annotated/
+|   |   |-- taxa.tsv
+|   |   `-- functions.tsv
+|   |-- high_confidence/taxa.tsv
+|   `-- sample_confidence.tsv
+|-- integrated/
+|   |-- harmonized_taxa.tsv
+|   |-- taxonomy_crosswalk.tsv
+|   |-- taxon_evidence.tsv
+|   |-- evidence_model.json
+|   `-- cross_assay_concordance.tsv
+|-- diversity/
+|   |-- alpha_diversity.tsv
+|   `-- beta_diversity.tsv
+|-- pipeline_info/
+|   |-- provenance.json
+|   |-- trace.tsv
+|   |-- timeline.html
+|   |-- execution_report.html
+|   `-- dag.html
+`-- triarchy_report.html
 ```
 
 Native assay outputs remain in the Nextflow work directory in the current

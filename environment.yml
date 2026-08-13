@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
   - biobakery
+  - nodefaults
 dependencies:
   - python=3.12
   - psutil
@@ -15,6 +16,7 @@ dependencies:
   - metaphlan
   - diamond
   - cutadapt
+  - xopen>=1.6
   - itsxpress
   - r-base
   - bioconductor-dada2

@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use TRIARCHY, please cite the archived release and manuscript."
+title: "TRIARCHY: a cross-assay evidence framework for environmental microbiome profiling"
+authors:
+  - family-names: Lucaci
+    given-names: Alexander G.
+    affiliation: "Department of Physiology and Biophysics, Weill Cornell Medicine, New York, NY, USA; The HRH Prince Alwaleed Bin Talal Bin Abdulaziz Alsaud Institute for Computational Biomedicine, Weill Cornell Medicine, New York, NY, USA"
+    email: "agl4001@med.cornell.edu"
+  - family-names: Ledins
+    given-names: Phoebe
+    affiliation: "Yale Center for Ecosystems + Architecture, Yale University, New Haven, CT, USA"
+  - family-names: Henaff
+    given-names: Elizabeth
+    affiliation: "New York University Tandon School of Engineering, New York, NY, USA"
+  - family-names: Dyson
+    given-names: Anna
+    affiliation: "Yale Center for Ecosystems + Architecture, Yale University, New Haven, CT, USA"
+  - family-names: Mason
+    given-names: Christopher E.
+    affiliation: "Department of Physiology and Biophysics, Weill Cornell Medicine, New York, NY, USA; The HRH Prince Alwaleed Bin Talal Bin Abdulaziz Alsaud Institute for Computational Biomedicine, Weill Cornell Medicine, New York, NY, USA"
+version: "0.1.0"
+license: "GPL-3.0-only"
+repository-code: "https://github.com/aglucaci/TRIARCHY"
+date-released: "2026-08-04"
+preferred-citation:
+  type: article
+  title: "TRIARCHY: a cross-assay evidence framework for environmental microbiome profiling"
+  authors:
+    - family-names: Lucaci
+      given-names: Alexander G.
+      affiliation: "Department of Physiology and Biophysics, Weill Cornell Medicine, New York, NY, USA; The HRH Prince Alwaleed Bin Talal Bin Abdulaziz Alsaud Institute for Computational Biomedicine, Weill Cornell Medicine, New York, NY, USA"
+      email: "agl4001@med.cornell.edu"
+    - family-names: Ledins
+      given-names: Phoebe
+      affiliation: "Yale Center for Ecosystems + Architecture, Yale University, New Haven, CT, USA"
+    - family-names: Henaff
+      given-names: Elizabeth
+      affiliation: "New York University Tandon School of Engineering, New York, NY, USA"
+    - family-names: Dyson
+      given-names: Anna
+      affiliation: "Yale Center for Ecosystems + Architecture, Yale University, New Haven, CT, USA"
+    - family-names: Mason
+      given-names: Christopher E.
+      affiliation: "Department of Physiology and Biophysics, Weill Cornell Medicine, New York, NY, USA; The HRH Prince Alwaleed Bin Talal Bin Abdulaziz Alsaud Institute for Computational Biomedicine, Weill Cornell Medicine, New York, NY, USA"
+  journal: "Bioinformatics"
+  year: 2026
+  doi: "10.5281/zenodo.REPLACE"

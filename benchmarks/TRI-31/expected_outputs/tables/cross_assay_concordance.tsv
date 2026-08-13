@@ -1,0 +1,25 @@
+biological_sample_id	kingdom	assay_pair	presence_jaccard	rank_agreement	interpretation
+OUTDOOR_AIR_01	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+OUTDOOR_AIR_02	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+OUTDOOR_AIR_03	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+RETURN_AIR_01	Bacteria	WMS-16S	0.82	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+RETURN_AIR_02	Bacteria	WMS-16S	0.82	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+RETURN_AIR_03	Bacteria	WMS-16S	0.82	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SETTLED_DUST_01	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SETTLED_DUST_02	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SETTLED_DUST_03	Bacteria	WMS-16S	0.82	genus_limited	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SUPPLY_AIR_01	Bacteria	WMS-16S	0.68	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SUPPLY_AIR_02	Bacteria	WMS-16S	0.68	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+SUPPLY_AIR_03	Bacteria	WMS-16S	0.68	species_supported	BAC_D primer bias and BAC_A/B rank ambiguity explain most disagreement.
+OUTDOOR_AIR_01	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+OUTDOOR_AIR_02	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+OUTDOOR_AIR_03	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+RETURN_AIR_01	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+RETURN_AIR_02	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+RETURN_AIR_03	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SETTLED_DUST_01	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SETTLED_DUST_02	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SETTLED_DUST_03	Fungi	WMS-ITS	0.88	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SUPPLY_AIR_01	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SUPPLY_AIR_02	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.
+SUPPLY_AIR_03	Fungi	WMS-ITS	0.60	reference_limited	FUN_B is designed as stronger ITS evidence than WMS evidence.

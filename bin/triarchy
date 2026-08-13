@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""Publication-facing command line helpers for TRIARCHY.
+
+The Nextflow workflow remains the primary execution engine. This wrapper gives
+users stable preflight and reference-manifest commands that are cheap to run
+before scheduling a large analysis.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import os
+import platform
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from validate_benchmark_metadata import MetadataError, read_tsv, validate  # noqa: E402
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def parse_scalar(value: str) -> str | bool | int | float | None:
+    value = value.strip().strip('"').strip("'")
+    if value in {"", "null", "Null", "NULL", "~"}:
+        return None
+    if value in {"true", "True", "TRUE"}:
+        return True
+    if value in {"false", "False", "FALSE"}:
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def parse_simple_yaml(path: Path) -> dict[str, Any]:
+    """Parse the small YAML subset used by conf/databases.example.yml.
+
+    This intentionally avoids a PyYAML dependency for the test/preflight path.
+    Supported forms are nested mappings by two-space indentation and lists of
+    mappings under a key, which is enough for the reference manifest.
+    """
+    root: dict[str, Any] = {}
+    stack: list[tuple[int, dict[str, Any] | list[Any]]] = [(-1, root)]
+    last_key: dict[int, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        text = line.strip()
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        parent = stack[-1][1]
+        if text.startswith("- "):
+            if not isinstance(parent, list):
+                raise ValueError(f"YAML list item has no list parent: {raw_line}")
+            item_text = text[2:]
+            item: dict[str, Any] = {}
+            parent.append(item)
+            if item_text:
+                key, sep, value = item_text.partition(":")
+                if not sep:
+                    raise ValueError(f"unsupported YAML list item: {raw_line}")
+                item[key.strip()] = parse_scalar(value)
+                last_key[indent + 2] = key.strip()
+            stack.append((indent, item))
+            continue
+        key, sep, value = text.partition(":")
+        if not sep:
+            raise ValueError(f"unsupported YAML line: {raw_line}")
+        key = key.strip()
+        if value.strip():
+            if not isinstance(parent, dict):
+                raise ValueError(f"YAML scalar has non-mapping parent: {raw_line}")
+            parent[key] = parse_scalar(value)
+            last_key[indent] = key
+            continue
+        child: dict[str, Any] | list[Any]
+        child = [] if key.endswith("s") or key in {"references", "databases"} else {}
+        if not isinstance(parent, dict):
+            raise ValueError(f"YAML mapping has non-mapping parent: {raw_line}")
+        parent[key] = child
+        last_key[indent] = key
+        stack.append((indent, child))
+    return root
+
+
+def load_manifest(path: Path) -> dict[str, Any]:
+    suffix = path.suffix.casefold()
+    if suffix == ".json":
+        return json.loads(path.read_text(encoding="utf-8"))
+    if suffix in {".yml", ".yaml"}:
+        return parse_simple_yaml(path)
+    with path.open(encoding="utf-8", newline="") as handle:
+        return {"references": list(csv.DictReader(handle, delimiter="\t"))}
+
+
+def manifest_references(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    refs = manifest.get("references", manifest.get("databases", []))
+    if isinstance(refs, dict):
+        return [dict({"id": key}, **value) for key, value in refs.items()]
+    return [dict(item) for item in refs]
+
+
+def resolve_reference_path(ref: dict[str, Any], destination: Path | None, manifest_dir: Path) -> Path | None:
+    raw = ref.get("path") or ref.get("relative_path") or ref.get("prefix")
+    if not raw:
+        return None
+    path = Path(str(raw)).expanduser()
+    if path.is_absolute():
+        return path
+    if destination:
+        return destination / path
+    return manifest_dir / path
+
+
+def check_databases(manifest_path: Path, destination: Path | None) -> dict[str, Any]:
+    manifest = load_manifest(manifest_path)
+    references = manifest_references(manifest)
+    results = []
+    ok = True
+    for ref in references:
+        ref_id = str(ref.get("id") or ref.get("name") or "unnamed")
+        path = resolve_reference_path(ref, destination, manifest_path.parent)
+        required = bool(ref.get("required", True))
+        status = "missing_path"
+        digest = ""
+        if path is None:
+            ok = ok and not required
+        elif not path.exists():
+            status = "missing"
+            ok = ok and not required
+        elif path.is_dir():
+            files = [item for item in path.rglob("*") if item.is_file()]
+            status = "present" if files else "empty"
+            ok = ok and (status == "present" or not required)
+        else:
+            digest = sha256(path)
+            expected = str(ref.get("sha256") or "").strip().casefold()
+            status = "checksum_ok" if not expected or digest == expected else "checksum_mismatch"
+            ok = ok and (status != "checksum_mismatch" or not required)
+        results.append({
+            "id": ref_id,
+            "kind": ref.get("kind", ""),
+            "version": ref.get("version", ""),
+            "required": required,
+            "path": str(path) if path else "",
+            "sha256": digest,
+            "status": status,
+        })
+    return {
+        "manifest": str(manifest_path),
+        "destination": str(destination) if destination else "",
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "ok": ok,
+        "references": results,
+    }
+
+
+def command_validate(args: argparse.Namespace) -> int:
+    errors = []
+    try:
+        sample_count, control_count = validate(args.samples, args.controls)
+    except (OSError, MetadataError) as error:
+        errors.append(str(error))
+        sample_count = control_count = 0
+
+    if args.check_fastqs:
+        try:
+            rows = read_tsv(args.samples, set(), "sample manifest")
+            base_dir = args.samples.parent
+            for row in rows:
+                for field in ("fastq_r1", "fastq_r2"):
+                    value = row.get(field, "")
+                    if not value:
+                        continue
+                    path = Path(value)
+                    if not path.is_absolute():
+                        path = base_dir / path
+                    if not path.exists():
+                        errors.append(f"missing FASTQ for {row.get('library_id', '')}: {path}")
+        except OSError as error:
+            errors.append(str(error))
+
+    database_report = None
+    if args.databases:
+        try:
+            database_report = check_databases(args.databases, args.database_destination)
+            for ref in database_report["references"]:
+                if ref["required"] and ref["status"] not in {"present", "checksum_ok"}:
+                    errors.append(f"database {ref['id']} is {ref['status']}: {ref['path']}")
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            errors.append(f"database manifest error: {error}")
+
+    report = {
+        "ok": not errors,
+        "sample_libraries": sample_count,
+        "control_relationships": control_count,
+        "fastq_check": bool(args.check_fastqs),
+        "database_check": database_report,
+        "errors": errors,
+    }
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+    print(f"VALID: {sample_count} libraries; {control_count} control relationships.")
+    if database_report:
+        print(f"VALID: {len(database_report['references'])} database references checked.")
+    return 0
+
+
+def command_database_check(args: argparse.Namespace) -> int:
+    try:
+        report = check_databases(args.manifest, args.destination)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(report, indent=2))
+    return 0 if report["ok"] else 2
+
+
+def command_database_install(args: argparse.Namespace) -> int:
+    installer = ROOT / "scripts" / "install_databases.sh"
+    if not installer.exists():
+        print(f"ERROR: installer is missing: {installer}", file=sys.stderr)
+        return 2
+    if platform.system() == "Windows" and shutil.which("bash") is None:
+        print(
+            "ERROR: database installation requires bash on Windows; run from WSL2 or Git Bash.",
+            file=sys.stderr,
+        )
+        return 2
+    command = [
+        "bash" if platform.system() == "Windows" else str(installer),
+        str(installer) if platform.system() == "Windows" else "",
+        "--database-dir", str(args.destination),
+        "--database-profile", args.profile,
+    ]
+    command = [item for item in command if item]
+    if args.yes:
+        command.append("--yes")
+    if args.kraken_archive:
+        command.extend(["--kraken-archive", str(args.kraken_archive)])
+    env = os.environ.copy()
+    if args.download_attempts:
+        env["TRIARCHY_DOWNLOAD_ATTEMPTS"] = str(args.download_attempts)
+    completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
+    if completed.returncode:
+        return completed.returncode
+    if args.manifest:
+        report = check_databases(args.manifest, args.destination)
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        return 0 if report["ok"] else 2
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="triarchy", description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    validate_parser = sub.add_parser("validate", help="preflight metadata, FASTQs, and optional databases")
+    validate_parser.add_argument("--input", "--samples", dest="samples", type=Path, required=True)
+    validate_parser.add_argument("--paired-controls", "--controls", dest="controls", type=Path, required=True)
+    validate_parser.add_argument("--databases", type=Path)
+    validate_parser.add_argument("--database-destination", type=Path)
+    validate_parser.add_argument("--skip-fastq-check", dest="check_fastqs", action="store_false")
+    validate_parser.add_argument("--report", type=Path)
+    validate_parser.set_defaults(check_fastqs=True, func=command_validate)
+
+    databases = sub.add_parser("databases", help="database manifest utilities")
+    database_sub = databases.add_subparsers(dest="database_command", required=True)
+    check = database_sub.add_parser("check", help="verify database paths and checksums")
+    check.add_argument("--manifest", type=Path, required=True)
+    check.add_argument("--destination", type=Path)
+    check.add_argument("--report", type=Path)
+    check.set_defaults(func=command_database_check)
+
+    install = database_sub.add_parser("install", help="run the checkpointed TRIARCHY database installer")
+    install.add_argument("--manifest", type=Path, help="optional manifest to verify after installation")
+    install.add_argument("--destination", type=Path, required=True)
+    install.add_argument("--profile", choices=("minimal", "standard"), default="minimal")
+    install.add_argument("--kraken-archive", type=Path)
+    install.add_argument("--download-attempts", type=int)
+    install.add_argument("--yes", action="store_true")
+    install.add_argument("--report", type=Path)
+    install.set_defaults(func=command_database_install)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

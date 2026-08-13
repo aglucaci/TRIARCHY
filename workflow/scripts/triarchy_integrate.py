@@ -129,7 +129,12 @@ def cmd_split(args: argparse.Namespace) -> None:
 
 
 def cmd_mock_profile(args: argparse.Namespace) -> None:
-    control = any(token in args.library_id.upper() for token in ("NEG", "BLANK"))
+    library_token = args.library_id.upper()
+    control = (
+        any(token in library_token for token in ("NEG", "BLANK", "NTC"))
+        or library_token.startswith("EB")
+        or "_EB" in library_token
+    )
     if control:
         taxa = [("CTRL001", "Ralstonia", "genus", 80.0)]
     elif args.assay == "WMS":
@@ -388,6 +393,24 @@ def cmd_control(args: argparse.Namespace) -> None:
             lookup.get((control_id, feature_key), 0.0)
             for control_id in linked.get(library_id, [])
         ]
+        stage_values: dict[str, list[float]] = defaultdict(list)
+        for control_id, stage in zip(linked.get(library_id, []), linked_stages.get(library_id, [])):
+            normalized_stage = stage.casefold().replace("-", "_")
+            if normalized_stage in {"ext", "extraction_blank"}:
+                normalized_stage = "extraction"
+            elif normalized_stage in {"pcr_blank", "amplification"}:
+                normalized_stage = "pcr"
+            elif normalized_stage in {"lib", "library_blank"}:
+                normalized_stage = "library"
+            elif normalized_stage in {"sequencing", "seq", "run_blank"}:
+                normalized_stage = "run"
+            elif normalized_stage not in {"field", "extraction", "pcr", "library", "run"}:
+                normalized_stage = "other"
+            stage_values[normalized_stage].append(lookup.get((control_id, feature_key), 0.0))
+        stage_scores = {
+            stage: clamp(max(values, default=0.0) / max(abundance, 1e-12))
+            for stage, values in stage_values.items()
+        }
         max_control = max(control_values, default=0.0)
         ratio = max_control / max(abundance, 1e-12)
         control_ids = set(linked.get(library_id, []))
@@ -437,6 +460,17 @@ def cmd_control(args: argparse.Namespace) -> None:
             "abundance_contamination_score": fmt(abundance_signal),
             "batch_localization_score": fmt(batch_score),
             "batch_contamination_score": fmt(batch_evidence),
+            "field_contamination_score": fmt(stage_scores.get("field", 0.0)),
+            "extraction_contamination_score": fmt(stage_scores.get("extraction", 0.0)),
+            "pcr_contamination_score": fmt(stage_scores.get("pcr", 0.0)),
+            "library_contamination_score": fmt(stage_scores.get("library", 0.0)),
+            "run_contamination_score": fmt(stage_scores.get("run", 0.0)),
+            "other_control_contamination_score": fmt(stage_scores.get("other", 0.0)),
+            "probable_contamination_source": max(
+                stage_scores,
+                key=stage_scores.get,
+                default="none",
+            ) if max(stage_scores.values(), default=0.0) > 0 else "none",
             "contamination_probability": fmt(probability),
             "associated_controls": ";".join(linked.get(library_id, [])),
             "associated_control_types": ";".join(linked_stages.get(library_id, [])),
@@ -467,6 +501,13 @@ def cmd_control(args: argparse.Namespace) -> None:
         "abundance_contamination_score",
         "batch_localization_score",
         "batch_contamination_score",
+        "field_contamination_score",
+        "extraction_contamination_score",
+        "pcr_contamination_score",
+        "library_contamination_score",
+        "run_contamination_score",
+        "other_control_contamination_score",
+        "probable_contamination_source",
         "contamination_probability",
         "associated_controls",
         "associated_control_types",

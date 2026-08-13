@@ -19,3 +19,4 @@ TRI-19	synthetic	Technical and extraction repeatability	Measure stability across
 TRI-20	physical	Commercial physical standards	Executable acquisition and analysis surrogate	45	implemented_design_surrogate	empirical taxonomic accuracy
 TRI-21	physical	Environmental mixed-kingdom mock	Executable acquisition and analysis surrogate	114	implemented_design_surrogate	kingdom-specific calibration
 TRI-30	environmental	Matched built-environment study	Executable balanced study surrogate	192	implemented_design_surrogate	robust ecological conclusions
+TRI-31	showcase	Thirty-minute TRIARCHY showcase	Home-computer showcase with four environmental states controls host contamination reagent and batch contamination assay bias taxonomy ambiguity and expected publication outputs	51	implemented	cross-assay explanatory narrative

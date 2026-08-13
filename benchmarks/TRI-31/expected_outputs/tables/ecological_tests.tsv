@@ -1,0 +1,4 @@
+test	expected_result	interpretation
+environment_permanova	strong_environment_structure	Four designed environmental states separate in beta diversity.
+supply_air_richness	lowest	Supply air has the lowest biomass and diversity.
+settled_dust_richness	highest	Settled dust has the richest mixed community.

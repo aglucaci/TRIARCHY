@@ -1,5 +1,5 @@
 {
-  "model_version": "evidence-v3.0",
+  "model_version": "triarchy-authenticity-v1.0",
   "prior_presence": 0.25,
   "contaminant_threshold": 0.65,
   "cross_contamination_threshold": 0.45,
@@ -10,6 +10,10 @@
   "minimum_mapping_confidence": 0.5,
   "present_score_threshold": 0.75,
   "absent_score_threshold": 0.2,
+  "authenticity_supported_threshold": 0.8,
+  "authenticity_absent_threshold": 0.2,
+  "indeterminate_ci_overlap_low": 0.2,
+  "indeterminate_ci_overlap_high": 0.8,
   "calibration": {
     "method": "piecewise_linear",
     "status": "synthetic_only_not_empirically_calibrated",

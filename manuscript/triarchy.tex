@@ -1,488 +1,402 @@
-\documentclass[11pt]{article}
+\documentclass[12pt]{article}
 
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
-\usepackage{microtype}
-\usepackage{amsmath}
-\usepackage{booktabs}
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\IfFileExists{amsmath.sty}{\usepackage{amsmath}}{}
 \usepackage{graphicx}
-\usepackage{xcolor}
+\IfFileExists{setspace.sty}{\usepackage{setspace}}{\newcommand{\doublespacing}{}}
+\IfFileExists{lineno.sty}{\usepackage{lineno}}{\newcommand{\linenumbers}{}}
+\IfFileExists{xcolor.sty}{\usepackage{xcolor}}{\newcommand{\textcolor}[2]{##2}}
 \usepackage[round,authoryear]{natbib}
-\usepackage{hyperref}
+\IfFileExists{etoolbox.sty}{\usepackage{hyperref}}{\newcommand{\hypersetup}[1]{}}
 
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[#1]}}}
 \newcommand{\software}[1]{\texttt{#1}}
 
-\title{TRIARCHY: control-aware integration of shotgun metagenomic, 16S and ITS
-sequencing for environmental microbiome studies}
-\author{Alexander G. Lucaci\textsuperscript{1,2,*},
-  \todo{Co-author 2}\textsuperscript{1},
-  \todo{Co-author 3}\textsuperscript{2}, and
-  \todo{Senior Author}\textsuperscript{1}\\[0.7em]
-  \small \textsuperscript{1}\todo{Department, Institution, City, State, Country}\\
-  \small \textsuperscript{2}\todo{Consortium or second affiliation, City, State, Country}\\
-  \small \textsuperscript{*}Correspondence: \todo{corresponding-author email}}
+\title{TRIARCHY: a cross-assay evidence framework for environmental microbiome profiling}
+\author{%
+  \resizebox{\textwidth}{!}{Alexander G. Lucaci\textsuperscript{1,2,*}, Phoebe Ledins\textsuperscript{3}, Elizabeth Henaff\textsuperscript{4}, Anna Dyson\textsuperscript{3}, and Christopher E. Mason\textsuperscript{1,2}}\\[0.7em]
+  \parbox{0.95\textwidth}{\centering\footnotesize
+  \textsuperscript{1}Department of Physiology and Biophysics, Weill Cornell Medicine, New York, NY, USA\\
+  \textsuperscript{2}The HRH Prince Alwaleed Bin Talal Bin Abdulaziz Alsaud Institute for Computational Biomedicine, Weill Cornell Medicine, New York, NY, USA\\
+  \textsuperscript{3}Yale Center for Ecosystems + Architecture, Yale University, New Haven, CT, USA\\
+  \textsuperscript{4}New York University Tandon School of Engineering, New York, NY, USA\\
+  \textsuperscript{*}Correspondence: Alexander G. Lucaci, \href{mailto:agl4001@med.cornell.edu}{agl4001@med.cornell.edu}}}
 \date{}
 
 \begin{document}
+\doublespacing
+\linenumbers
 \maketitle
 
 \begin{abstract}
-\noindent\textbf{Motivation:}
-Environmental microbiome studies increasingly generate matched shotgun
-metagenomic, 16S ribosomal RNA gene, and fungal internal transcribed spacer
-sequencing data. These assays provide complementary but non-equivalent
-observations of microbial communities. Their relative abundances are not
-directly interchangeable, their taxonomic classifications may use incompatible
-reference systems, and failure to detect a taxon can reflect biological
-absence, inadequate sequencing depth, primer bias, incomplete reference
-representation, or contamination. Existing workflows generally process these
-assays independently or merge their outputs without explicitly interpreting
-assay disagreement.
+\noindent\textbf{Summary:}
+TRIARCHY is a reproducible workflow and evidence model for interpreting matched
+whole-metagenome shotgun (WMS), 16S rRNA gene and fungal ITS sequencing from
+environmental microbiome studies. Rather than merging assay-native relative
+abundances, TRIARCHY first estimates sample--taxon biological authenticity and
+then explains agreement or disagreement using linked controls, assay scope,
+detection power, taxonomic compatibility, reference representation and
+unresolved discordance. The framework is broadly applicable across microbiome
+science wherever matched WMS, 16S and ITS data, or defined subsets of these
+assays, are generated from the same samples. In deterministic TRI-31 showcase
+validation, TRIARCHY completed 163 Nextflow tasks on a 51-library matched
+WMS--16S--ITS design with zero failed tasks and emitted 60 sample--taxon
+evidence rows while preserving assay-specific outputs and auditable evidence
+reports.
 
-\medskip\noindent\textbf{Results:}
-We developed TRIARCHY, a portable workflow for processing and integrating
-matched shotgun metagenomic, 16S, and ITS sequencing. TRIARCHY applies
-modality-appropriate quality control and profiling, represents experimental
-controls as explicit sample-linked relationships, harmonizes taxonomic
-assignments at defensible shared ranks, and produces a cross-assay evidence
-classification for every sample--taxon combination. Rather than pooling
-assay-native relative abundances, TRIARCHY distinguishes concordant detections,
-credible single-assay detections, assay-limited nondetections, rank-limited
-agreement, reference-limited assignments, probable contaminants, genuine
-discordance, and indeterminate evidence. The workflow generates reproducible
-taxonomic, functional, control, and ecological outputs together with an
-interactive HTML report. The software benchmark suite contains 15 executable
-fixtures comprising 962 WMS, 16S, and ITS libraries. All fixtures traversed the
-complete deterministic Nextflow graph without failed tasks. These
-repository-scale fixtures validate orchestration and data contracts; empirical
-taxonomic and ecological performance remains to be established using physical
-standards and field samples.
+\medskip\noindent\textbf{Availability and Implementation:}
+TRIARCHY is implemented in Nextflow DSL2 and Python and is freely available
+under the GPL-3.0-only license at \url{https://github.com/aglucaci/TRIARCHY}. Version
+\todo{1.0.0}, containers, benchmark data and reference manifests are archived
+at \todo{DOI or archival URL}. Documentation, deterministic demo profiles and
+a one-command setup-and-run wrapper are available at \todo{documentation URL}.
 
-\medskip\noindent\textbf{Availability and implementation:}
-TRIARCHY is implemented in Nextflow DSL2 and is available under the
-\todo{MIT or Apache-2.0} license at \todo{GitHub repository}. Container images,
-documentation, and test datasets are available from \todo{repository or
-documentation site}. The version used in this study is archived at
-\todo{Zenodo DOI}. TRIARCHY supports local, Slurm, and cloud execution.
+\medskip\noindent\textbf{Contact:}
+Alexander G. Lucaci, \href{mailto:agl4001@med.cornell.edu}{agl4001@med.cornell.edu}
+
+\medskip\noindent\textbf{Supplementary information:}
+Supplementary data are available at \emph{Bioinformatics} online.
 \end{abstract}
 
 \section{Introduction}
 
-Microbial communities can be characterized using marker-gene amplicon
-sequencing or whole-metagenome shotgun sequencing. The 16S ribosomal RNA gene
-primarily profiles bacteria and archaea, whereas the fungal internal
-transcribed spacer region provides higher-resolution evidence for many fungal
-taxa. Shotgun metagenomics can recover taxonomic and functional information
-across multiple microbial kingdoms, but its sensitivity depends on microbial
-biomass, sequencing depth, genome size, host contamination, and reference-genome
-representation.
+Environmental microbiome studies increasingly combine WMS, 16S and ITS
+sequencing. These assays provide complementary but non-equivalent observations:
+16S primarily targets bacteria and archaea, ITS targets fungi, and WMS can
+recover taxonomy and functional potential across kingdoms when sequencing
+depth, biomass and reference representation are sufficient. Their relative
+abundances are not on a common scale because marker copy number, primers,
+extraction, genome size and classifier databases shape each measurement.
 
-These assays therefore represent different measurement processes rather than
-technical replicates of a single abundance scale. A taxon comprising 5\% of
-classified 16S reads does not necessarily constitute 5\% of microbial cells,
-genomes, or shotgun reads because marker copy number, primer efficiency, DNA
-extraction, genome size, and classification databases affect the observed
-values. Direct averaging or concatenation of assay-native relative abundances
-can consequently create misleading integrated profiles.
+Disagreement among assays is therefore not automatically biological. A taxon
+may be absent, missed because a library is underpowered, classified at unequal
+rank, poorly represented in a database, or enriched in a negative control.
+Reference harmonization can reduce apparent 16S--WMS disagreement for bacteria
+and archaea \citep{mcdonald2024}, whereas fungal WMS interpretation remains
+limited by incomplete databases and variable classifiers \citep{avershina2025}.
+Contamination tools such as \software{decontam} are useful but are often
+applied within each assay rather than through explicit sample-linked laboratory
+relationships \citep{davis2018}. TRIARCHY addresses this gap by implementing a
+control-aware cross-assay evidence layer on top of established assay workflows.
 
-Taxonomic incompatibility introduces an additional problem. Greengenes2
-demonstrated that much of the apparent disagreement between bacterial 16S and
-shotgun profiles can be reduced when both are interpreted through a shared
-reference tree, showing that reference-system differences can be mistaken for
-biological disagreement \citep{mcdonald2024}. However, a comparable mature
-framework for reconciling fungal ITS and shotgun classifications is not widely
-available. Fungal profiling from shotgun data remains limited by incomplete
-genome databases and variable classifier performance; a recent benchmark
-reported substantial missed detections and false positives across available
-methods \citep{avershina2025}.
+Existing software addresses adjacent but distinct problems. Qmatey provides a
+common taxonomic profiling framework across multiple microbiome sequencing
+strategies \citep{adams2023}, while Com-2seq integrates 16S and shotgun
+profiles for differential-abundance testing \citep{yue2025}. TRIARCHY does not
+replace assay-specific classifiers or pool abundance estimates. It addresses
+evidence adjudication: determining which explanation best accounts for
+agreement or disagreement among matched WMS, 16S and ITS assays. Although
+motivated by environmental microbiome profiling, the same evidence structure
+applies to host-associated, built-environment, clinical, agricultural and other
+microbiome studies whenever shotgun, bacterial/archaeal marker-gene and fungal
+marker-gene assays are matched within samples, including studies in which only
+a planned subset of assays is available for some samples.
 
-Contamination further complicates cross-assay interpretation, particularly in
-low-biomass environmental samples. Statistical methods such as
-\software{decontam} identify features associated with negative controls or
-decreasing DNA concentration, but controls are often analyzed separately for
-each modality and are not necessarily linked to the biological samples,
-extraction batches, PCR plates, or sequencing runs to which they apply
-\citep{davis2018}.
+\section{Implementation}
 
-TRIARCHY addresses these problems as an evidence-integration workflow rather
-than an abundance-merging procedure. Its primary objective is to determine
-what conclusion is supported when matched shotgun, 16S, and ITS assays agree or
-disagree. For each sample and taxon, TRIARCHY combines assay quality, taxonomic
-compatibility, expected assay scope, reference representation, and linked-control
-evidence to assign an interpretable evidence status. The workflow thereby
-separates genuine biological discordance from technical nondetection,
-taxonomic ambiguity, and probable contamination.
+TRIARCHY is a Nextflow DSL2 workflow \citep{ditommaso2017} with modular WMS,
+16S, ITS and integration stages (Fig.~1). The required inputs are a sequencing
+manifest and a paired-control table. The metadata validator builds a
+sample--control graph in which field, extraction, PCR, library and sequencing
+controls are linked only to the libraries, assays and batches for which they
+are relevant. It rejects duplicated identifiers, cross-assay control edges,
+missing paired reads, incompatible batches, cyclic control relationships and
+incomplete required fields before expensive jobs are scheduled.
 
-\section{Materials and methods}
+Assay-native branches use established tools: WMS reads are processed with
+\software{fastp}, Bowtie2, Kraken 2, Bracken and HUMAnN
+\citep{wood2019,lu2017,beghini2021}; 16S and ITS reads are processed with
+cutadapt and DADA2 \citep{callahan2016}, with ITSxpress extraction for ITS
+\citep{rivers2018,einarsson2024}. These branches are supporting
+infrastructure. Their outputs remain assay-specific and are not averaged.
 
-\subsection{Workflow implementation and inputs}
+The implemented contribution is the integration layer. First, TRIARCHY
+annotates every assay-native taxon using linked-control prevalence,
+sample-to-control abundance enrichment and batch localization. The unfiltered,
+control-annotated and high-confidence tables are all emitted so filtering
+remains auditable. Second, source assignments are harmonized into canonical
+taxa while retaining the original database identifier, original lineage,
+mapping method, mapping confidence, database version and reference coverage.
+Assays are compared at the deepest jointly supported rank; a species-level WMS
+call and genus-level marker-gene call are interpreted as genus-level evidence,
+not species-level conflict.
 
-TRIARCHY is implemented in Nextflow DSL2 \citep{ditommaso2017} using modular
-processes and software containers. Dependencies are distributed through
-\todo{Docker and Apptainer/Singularity images}, and each execution records the
-workflow version, Git commit, command-line parameters, container digests, and
-reference-database versions. Execution profiles are provided for local
-computers, Slurm clusters, and \todo{supported cloud platform}.
+Third, TRIARCHY evaluates each sample--taxon pair with a two-stage evidence
+model. Bacterial and archaeal taxa are evaluated using WMS and 16S evidence;
+fungal taxa are evaluated using WMS and ITS evidence. Each measured assay
+contributes detection support, library quality, depth-derived detection power,
+expected assay reliability, taxonomic resolution, mapping support, reference
+coverage, primer compatibility when supplied and stage-specific contamination
+evidence. Stage I reports \software{biological\_authenticity}, a
+posterior-style estimate with approximate uncertainty bounds and a conservative
+\software{authenticity\_state}. Stage II reports \software{cross\_assay\_status},
+a parent explanation class: concordant, assay-limited, taxonomy-limited,
+contamination-associated, genuine discordance or indeterminate. Detailed
+software statuses and legacy score columns are retained in output tables and
+Supplementary Material for auditability and backward compatibility. The shipped
+calibration remains explicitly synthetic-only and is not presented as empirical
+probability calibration.
 
-The required input consists of one or more sequencing manifests and a
-control-relationship table. TRIARCHY reconciles these files into a unified
-sample table containing biological sample identifiers, library identifiers,
-sequencing modalities, FASTQ locations, collection metadata, and processing
-batches.
-
-The control table represents controls as explicit relationships rather than a
-single binary sample category. A biological sample may be linked separately to
-a field blank, collection-media blank, extraction blank, PCR blank, library
-blank, and positive control. Controls may apply to one modality, one batch, or
-multiple related samples. The input validator detects duplicated identifiers,
-missing files, incompatible control relationships, incomplete paired-end
-libraries, and batch inconsistencies before analysis begins.
-
-TRIARCHY permits incomplete modality combinations. Samples may contain all
-three assays or a defined subset, but missing-by-design libraries are
-distinguished from failed or low-quality libraries throughout downstream
-reporting.
-
-\subsection{Modality-specific processing}
-
-Shotgun reads undergo adapter and quality trimming with \software{fastp},
-followed by host-read depletion using Bowtie2 against a user-specified host
-reference. Kraken 2 classifies non-host reads, and Bracken estimates abundances
-at configured taxonomic ranks. Kraken 2 provides efficient $k$-mer-based
-classification, while Bracken redistributes reads assigned above the target
-rank to estimate taxon abundance \citep{wood2019,lu2017}. HUMAnN produces
-gene-family and pathway profiles from the host-depleted reads
-\citep{beghini2021}.
-
-For 16S data, cutadapt removes primers and adapters, after which DADA2 performs
-quality filtering, error-model learning, amplicon sequence-variant inference,
-paired-read merging, and chimera removal. DADA2 resolves exact sequence
-variants by modeling amplicon sequencing errors rather than clustering
-sequences into fixed-identity operational taxonomic units \citep{callahan2016}.
-ASVs are classified using \todo{SILVA version or Greengenes2 version}, and
-optionally placed within the Greengenes2 reference tree for direct bacterial
-and archaeal comparison with shotgun profiles.
-
-ITS reads are primer-trimmed with cutadapt and processed with ITSxpress to
-identify and extract the selected ITS region while retaining quality scores.
-ITSxpress removes conserved flanking regions before ASV inference and
-taxonomic classification \citep{rivers2018,einarsson2024}. DADA2 then infers
-fungal ASVs, which are classified against \todo{UNITE version}.
-
-Raw counts, assay-native relative abundances, and quality metrics are retained
-separately. TRIARCHY does not treat relative abundances from different assays
-as measurements on a common numerical scale.
-
-\subsection{Taxonomic harmonization}
-
-TRIARCHY converts taxonomic assignments into a canonical taxon table containing
-the original database identifier, original lineage, canonical identifier,
-canonical lineage, mapping method, mapping confidence, and database version.
-
-Bacterial and archaeal assignments can be harmonized through Greengenes2 or
-mapped to a configured canonical taxonomy. Fungal shotgun and ITS
-classifications are reconciled using cross-references among NCBI Taxonomy,
-UNITE species hypotheses, and curated synonym tables. Exact identifier matches
-are preferred, followed by accepted-name and lineage mappings. Ambiguous
-mappings are retained as one-to-many relationships rather than collapsed to an
-unsupported species.
-
-Cross-assay comparisons are conducted at the lowest rank supported by all
-contributing assignments. For example, a species-level shotgun classification
-and genus-level 16S classification are evaluated as genus-level agreement.
-TRIARCHY therefore avoids classifying unequal resolution as species-level
-discordance.
-
-\subsection{Control-aware evidence model}
-
-For sample $s$, taxon $t$, and modality $m$, TRIARCHY calculates an
-assay-specific evidence component
+Formally, for sample \(s\), taxon \(t\) and assay \(m\), TRIARCHY first
+summarizes linked-control evidence as a bounded contamination score:
 \begin{equation}
-  e_{smt} = q_{sm}\,d_{smt}\,r_{mt}\left(1-c_{smt}\right),
+  C_{smt} = \min\{1,\;0.45A_{smt}+0.35P_{smt}+0.20B_{smt}\},
+  \label{eq:contamination-score}
+\end{equation}
+where \(A_{smt}\) is the maximum linked-control to sample abundance ratio,
+\(P_{smt}\) is linked-control prevalence scaled by biological-sample
+prevalence, and \(B_{smt}\) is batch-localization evidence. Detection power for
+an expected and measured assay is
+\begin{equation}
+  \pi_{smt} =
+  R_{mt}\left(1-\exp\{-d_{sm}/D_m\}\right)G_{mt}Q_{sm},
+  \label{eq:detection-power}
+\end{equation}
+where \(R_{mt}\) is assay reliability for the taxonomic group, \(d_{sm}\) is
+library depth, \(D_m\) is the minimum depth parameter, \(G_{mt}\) is reference
+coverage and \(Q_{sm}\) is a library-quality factor. Positive per-assay
+evidence is then
+\begin{equation}
+  e_{smt} =
+  \left(1-\exp\{-5x_{smt}\}\right)
+  \sqrt{1/r_{smt}}\,
+  \lambda_{smt}\mu_{smt}R_{mt}\kappa_{smt}(1-C_{smt}),
   \label{eq:assay-evidence}
 \end{equation}
-where $q_{sm}$ represents sample and library quality, $d_{smt}$ represents
-observed detection support, $r_{mt}$ represents the expected reliability of
-modality $m$ for the taxonomic group, and $c_{smt}$ represents contamination
-evidence.
-
-Detection support is derived from the observed count or abundance, read depth,
-prevalence, and configured minimum-evidence criteria. Assay reliability may be
-supplied from benchmark data or estimated using positive-control and
-dilution-series results. It is evaluated by taxonomic group: absence from ITS
-is not negative evidence against a bacterial detection, and absence from 16S
-is not negative evidence against a fungal detection.
-
-Contamination evidence combines three signals: prevalence in linked negative
-controls, abundance relative to paired controls, and localization to a
-collection, extraction, PCR, or sequencing batch. TRIARCHY can incorporate
-\software{decontam} prevalence or frequency scores, but preserves the
-contributing control relationships and reasons for each decision.
-
-Assay-specific components are summarized using a noisy-OR evidence score:
+where \(x_{smt}\) is assay-native relative abundance, \(r_{smt}\) is abundance
+rank, \(\lambda_{smt}\) is taxonomic-rank resolution, \(\mu_{smt}\) is mapping
+confidence and \(\kappa_{smt}\) is primer compatibility. The Stage-I
+authenticity estimate updates prior log odds by positive detections,
+technically adequate nondetections and contamination penalties:
 \begin{equation}
-  E_{st} = 1 - \prod_m \left(1-e_{smt}\right).
-  \label{eq:noisy-or}
+  \begin{aligned}
+  \ell_{st} = \ell_0
+  &+ \sum_{m \in M_t}
+  \left[
+    I^+_{smt}\left(4e_{smt}+\log\frac{\pi_{smt}+0.05}{f_{smt}+0.05}\right)
+    + I^-_{smt}\log\frac{1-\pi_{smt}}{1-f_{smt}}
+  \right]\\
+  &-3\max_m C_{smt}-2\max_j S_{stj},
+  \end{aligned}
+  \label{eq:log-odds}
 \end{equation}
-The score represents cumulative support rather than a directly calibrated
-probability. Where truth-defined mock communities are provided, TRIARCHY fits
-an empirical calibration model that maps $E_{st}$ to observed detection
-precision.
+where \(M_t\) is the kingdom-appropriate assay set, \(I^+_{smt}\) indicates a
+detection, \(I^-_{smt}\) indicates a measured nondetection, \(f_{smt}\) is the
+policy-adjusted false-positive rate and \(S_{stj}\) is the strongest linked
+contamination signal over laboratory stages \(j\). Biological authenticity is
+\begin{equation}
+  \theta_{st} = \frac{1}{1+\exp\{-\ell_{st}\}}.
+  \label{eq:authenticity}
+\end{equation}
+TRIARCHY reports an approximate interval,
+\begin{equation}
+  \theta_{st} \pm
+  1.96\sqrt{\frac{\theta_{st}(1-\theta_{st})}{\max(2,\;2+n_{st})}},
+  \label{eq:authenticity-interval}
+\end{equation}
+where \(n_{st}\) is the accumulated evidence-unit count from measured assays,
+detections, detection power, mapping support and reference coverage.
 
-\subsection{Evidence classification}
+TRIARCHY provides metadata and database preflight validation, automated
+reference installation, deterministic test and showcase profiles, Docker and
+Apptainer container hooks, and execution profiles for laptops, workstations,
+Slurm and cloud-template environments. Production reference databases are
+installed separately under a user-selected directory and recorded in a
+generated Nextflow configuration. Missing-by-design modalities reduce the scope
+of inference rather than causing workflow failure.
 
-Each sample--taxon combination receives one of the following primary
-classifications:
-\begin{description}
-  \item[Concordant detection:] Supported by two or more biologically relevant
-    assays and not enriched in linked controls.
-  \item[Single-assay supported:] Confidently detected by one suitable assay
-    without technically adequate contradictory evidence.
-  \item[Assay-limited nondetection:] Absent from another relevant assay for
-    which sequencing depth, biomass, primer compatibility, or benchmarked
-    sensitivity was insufficient.
-  \item[Rank-limited agreement:] Assays support the same higher taxon but cannot
-    be compared at the deepest reported rank.
-  \item[Reference-limited evidence:] An exact organism is poorly represented or
-    absent from one of the reference databases.
-  \item[Probable contaminant:] Evidence is stronger in linked negative controls
-    or follows a batch-specific contamination pattern.
-  \item[Discordant:] Technically adequate assays provide incompatible taxonomic
-    evidence that is not explained by reference or control limitations.
-  \item[Indeterminate:] Available data are insufficient for a defensible
-    classification.
-\end{description}
+\section{Results}
 
-The complete evidence table records modality-specific observations, relevant
-controls, common comparison rank, score components, final status, and a
-machine-readable decision reason.
+\subsection*{Benchmark design}
 
-\subsection{Ecological analysis and reporting}
+The repository contains a versioned benchmark registry with metadata-contract,
+software, synthetic-truth, physical-design and environmental-design fixtures.
+Executable fixtures include sample-control edges, truth tables, read origins,
+ASV truth, taxonomic crosswalks, expected QC states, expected evidence statuses
+and generation provenance. TRI-20, TRI-21 and TRI-30 are explicitly labelled
+design surrogates and are not used as empirical biological evidence.
 
-TRIARCHY calculates alpha and beta diversity independently for each
-assay-native profile. Bacterial 16S profiles, fungal ITS profiles, shotgun
-taxonomic profiles, and shotgun functional profiles remain distinct.
+\subsection*{Cross-assay evidence performance}
 
-Cross-assay ecological concordance is evaluated using shared-rank taxon sets,
-distance-matrix associations, Procrustes comparisons of ordinations, and
-comparison of phenotype or environmental effect sizes. Integrated diversity
-is calculated only from the harmonized evidence representation and is clearly
-distinguished from assay-native diversity.
+Baseline comparison is implemented in
+\software{compare\_evidence\_methods.py}. It evaluates independent assay
+analysis, naive genus-table concatenation, shared-taxonomy harmonization,
+per-assay contamination filtering, global negative-control filtering, ablated
+TRIARCHY variants and full TRIARCHY against the same truth tables. The
+reported endpoints are authentic-taxon precision, recall and F1; contaminant
+precision and recall; explanatory-status accuracy; false-concordance and
+false-discordance rates; comparison-rank accuracy; low-abundance
+authentic-taxon retention when abundance truth is available; and Brier score.
+For a truth-labelled benchmark class, summary metrics are computed as
+\begin{equation}
+  \mathrm{precision}=\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},\quad
+  \mathrm{recall}=\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},\quad
+  F_1=\frac{2\,\mathrm{precision}\,\mathrm{recall}}
+  {\mathrm{precision}+\mathrm{recall}},
+  \label{eq:f1}
+\end{equation}
+and score calibration is summarized with
+\begin{equation}
+  \mathrm{Brier}=\frac{1}{N}\sum_{i=1}^{N}
+  \left(\theta_i-y_i\right)^2,
+  \label{eq:brier}
+\end{equation}
+where \(y_i\) is the truth label and \(\theta_i\) is the reported
+\software{biological\_authenticity} score.
 
-The final HTML report includes sequencing quality, host depletion, positive-
-and negative-control performance, taxonomic and functional summaries, assay
-completeness, contamination evidence, diversity analyses, and cross-assay
-agreement. A sample-level decision table identifies libraries recommended for
-unrestricted analysis, restricted analysis, or exclusion. Interactive taxon
-pages show evidence from every modality and linked control.
-
-\section{Evaluation}
-
-\subsection{Benchmark datasets}
-
-TRIARCHY uses a versioned benchmark registry containing one metadata-contract
-test and 15 executable datasets (Table~\ref{tab:benchmarks}). The executable
-fixtures comprise 962 WMS, 16S, and ITS libraries. Each includes
-gzip-compressed deterministic FASTQs, valid metadata, sample--control edges,
-assay-specific abundance truth, expected quality and taxon statuses, ASV truth,
-read origins, checksums, and generation provenance. The repository-scale reads
-are designed to exercise software behavior reproducibly and are not substitutes
-for publication-scale sequencing or empirical biological validation.
+Using the committed precomputed profiles from synthetic benchmark fixtures
+TRI-03, TRI-05--TRI-07 and TRI-10--TRI-19, we replayed the Python integration
+pipeline and baseline comparison on 1,562 collapsed sample--taxon truth
+observations (Table~\ref{tab:frozen-benchmark}). Under the strict
+\software{biological\_state = present} endpoint, TRIARCHY emitted no positive
+authenticity-state calls, yielding authentic \(F_1=0.000\); this reflects the
+current conservative policy, in which supported explanations can remain
+\software{indeterminate} when uncertainty intervals overlap the configured
+decision thresholds. TRIARCHY nevertheless had the highest explanatory-status
+accuracy (0.811) and lowest Brier score (0.371) among evaluated methods, while
+matching per-assay contamination filtering for contaminant \(F_1\) (0.660).
 
 \begin{table}[htbp]
   \centering
-  \caption{TRIARCHY benchmark inventory. TRI-20, TRI-21, and TRI-30 are
-  executable design surrogates rather than empirical observations.}
-  \label{tab:benchmarks}
-  \small
-  \begin{tabular}{@{}lll r@{}}
-    \toprule
-    ID & Class & Primary challenge & Libraries \\
-    \midrule
-    TRI-00 & Software & Metadata contracts and invalid designs & 0 \\
-    TRI-01--02 & Software & End-to-end and assay-branch execution & 30 \\
-    TRI-10 & Synthetic & Even mixed-kingdom recovery & 21 \\
-    TRI-11 & Synthetic & Log-abundance detection limits & 24 \\
-    TRI-12 & Synthetic & Low-biomass contamination ladder & 112 \\
-    TRI-13 & Synthetic & Structured environmental gradient & 75 \\
-    TRI-14 & Synthetic & Taxonomic ambiguity and harmonization & 48 \\
-    TRI-15 & Synthetic & Batch and control-linkage confounding & 97 \\
-    TRI-16 & Synthetic & Missing modalities and failures & 30 \\
-    TRI-17 & Synthetic & Depth, primer, and reference factorial & 36 \\
-    TRI-18 & Synthetic & Carryover and index leakage & 54 \\
-    TRI-19 & Synthetic & Technical and extraction repeatability & 84 \\
-    TRI-20--21 & Design surrogate & Physical mixed-community standards & 159 \\
-    TRI-30 & Design surrogate & Matched built-environment study & 192 \\
-    \midrule
-    \multicolumn{3}{r}{Total executable libraries} & 962 \\
-    \bottomrule
-  \end{tabular}
+  \caption{Deterministic synthetic benchmark comparison. Metrics were computed
+  from \software{results/frozen-release-accuracy-20260812/benchmark\_comparison.tsv}.
+  Authentic \(F_1\) uses the strict \software{biological\_state = present}
+  endpoint.}
+  \label{tab:frozen-benchmark}
+  \scriptsize
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrrrrrrrr}
+    \hline
+    Method & Auth. \(F_1\) & Contam. \(F_1\) & Status & False conc. &
+    False disc. & Rank & Low-abund. & Brier \\
+    \hline
+    Independent assay & 0.881 & 0.000 & 0.000 & 0.000 & 0.000 & 0.894 & 1.000 & 0.560 \\
+    Naive concatenation & 0.881 & 0.000 & 0.758 & 0.242 & 0.000 & 0.106 & 1.000 & 0.560 \\
+    Shared taxonomy & 0.881 & 0.000 & 0.665 & 0.167 & 0.000 & 0.894 & 1.000 & 0.560 \\
+    Per-assay contamination & 0.936 & 0.660 & 0.774 & 0.058 & 0.000 & 0.894 & 1.000 & 0.488 \\
+    Global controls & 0.565 & 0.370 & 0.397 & 0.044 & 0.000 & 0.894 & 0.575 & 0.626 \\
+    TRIARCHY & 0.000 & 0.660 & 0.811 & 0.058 & 0.000 & 0.894 & 0.000 & 0.371 \\
+    \hline
+  \end{tabular}}
 \end{table}
 
-The synthetic truth class spans even and log-distributed communities,
-reference-held-out organisms, closely related taxa, unequal taxonomic
-resolution, low-biomass contamination, ecological gradients, missing
-modalities, explicit technical failures, and batch confounding. TRI-17 adds a
-factorial depth, primer-recovery, marker-copy-number, and held-out-reference
-challenge. TRI-18 isolates sequencing-run carryover and index leakage from
-extraction- and assay-specific contamination. TRI-19 measures stability across
-technical replicates and three extraction batches.
+Automated tests currently cover metadata validation, harmonization, quality
+summaries, two-stage authenticity/explanation inference, diversity summaries
+and benchmark-comparison metrics. These tests verify that the evidence model
+and comparison harness execute on truth-defined fixtures; they do not
+substitute for production-profile accuracy results.
 
-Second, a low-biomass dilution series introduced known contaminants at constant
-or batch-specific concentrations. The experiment included field, extraction,
-PCR, and library controls linked to the samples and processing stages to which
-they applied.
+\subsection*{Empirical application}
 
-Third, TRI-20 and TRI-21 encode acquisition and analysis designs for a
-commercial standard and a custom mixed-kingdom standard across multiple input
-concentrations. Their current repository fixtures are explicitly labeled
-design surrogates; replacement with physical sequencing data is required for
-empirical sensitivity and abundance-accuracy claims.
+TRI-31 provides a 19-sample, 51-library matched WMS--16S--ITS showcase with
+biological samples, extraction blanks, PCR blanks, WMS library blanks and a
+positive mixed-community control. It exercises host DNA, reagent
+contamination, batch contamination, primer bias, taxonomic ambiguity, fungal
+reference limitation and pathway reporting in one executable bundle. The
+committed reads are scaled for repository and CI use, so TRI-31 is an
+application-design and reporting fixture rather than independent empirical
+biological evidence.
 
-Finally, TRI-30 implements a balanced 48-sample built-environment design across
-air filters, active air, settled dust, and surface swabs from outdoor intake,
-indoor supply, and indoor return environments. Its 192-library executable
-fixture tests study contracts and ecological reporting, but remains a design
-surrogate pending matched field data.
+\subsection*{Runtime and portability}
 
-\subsection{Taxonomic and contamination performance}
+TRIARCHY separates lightweight software checks from production reference
+installation. The deterministic demo and stub profiles run without bundled
+large databases, while the standard installer downloads host, Kraken2/Bracken,
+HUMAnN, SILVA and ITS references through checkpointed stages. A frozen
+submission release should report the tested operating systems, container or
+Slurm/Apptainer environments, installation time, production database footprint,
+workflow wall time and peak memory for both the compact benchmark bundle and at
+least one real matched WMS--16S--ITS dataset. In the current lightweight
+resource profile, the compact five-dataset benchmark bundle comprised 97
+modality-specific libraries and completed with zero failed tasks in 60.18 s,
+with a peak observed process-tree RSS of 0.372 GiB; these values characterize
+orchestration only.
 
-At the \todo{genus/species} rank, TRIARCHY recovered \todo{X\%} of expected
-bacterial and archaeal taxa and \todo{Y\%} of expected fungal taxa, compared
-with \todo{A\%} and \todo{B\%} using independent assay-specific filtering.
-Taxonomic harmonization reduced apparent 16S--shotgun discordance by
-\todo{X\%} and ITS--shotgun discordance by \todo{Y\%}.
+\section{Conclusion}
 
-In the contamination dilution series, paired-control inference achieved
-contaminant precision of \todo{X} and recall of \todo{Y}, compared with
-\todo{values} for removal of all features observed in a negative control and
-\todo{values} for per-modality \software{decontam}. TRIARCHY retained
-\todo{X\%} more authentic low-abundance taxa at the lowest biomass level while
-reducing contaminant-associated detections by \todo{Y\%}.
+TRIARCHY contributes an auditable method for explaining cross-assay microbiome
+evidence, not a new read classifier and not a procedure for pooling relative
+abundance. Its primary use case is any microbiome study in which matched WMS,
+16S, ITS and controls, or a declared subset of these assays, are available but
+incomplete detection, contamination and unequal taxonomy would otherwise be
+conflated with biological disagreement. The workflow exposes the assumptions
+behind each call so users can separate robust findings from assay-limited,
+reference-limited or control-associated signals.
 
-The evidence classifier correctly distinguished concordant, assay-limited,
-reference-limited, and contaminant-associated outcomes in \todo{X\%} of
-truth-defined sample--taxon cases. Calibration error for the integrated
-evidence score was \todo{value}.
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/figure1_workflow_architecture.pdf}{%
+  \includegraphics[width=\linewidth]{figures/figure1_workflow_architecture.pdf}%
+}{%
+  \fbox{\parbox{0.92\linewidth}{\centering Convert
+  \software{manuscript/figures/figure1\_workflow\_architecture.svg} to PDF for submission.}}%
+}
+\caption{TRIARCHY workflow architecture.}
+\label{fig:triarchy-main}
+\end{figure}
 
-\subsection{Reproducibility and computational performance}
-
-All 962 benchmark libraries completed successfully through the deterministic
-Nextflow graph using the local execution profile, with no failed tasks. The
-automated repository suite comprised 24 tests covering metadata validation,
-FASTQ and truth-package completeness, manifest checksums, evidence-model
-behavior, and benchmark scale. Slurm, cloud, and containerized reproducibility
-remain \todo{to be evaluated on the corresponding deployment platforms}.
-
-For \todo{N} paired-end shotgun libraries containing \todo{N million} reads
-each and \todo{N} amplicon libraries, TRIARCHY required \todo{CPU hours},
-\todo{peak memory}, and \todo{wall time} on \todo{hardware description}.
-Runtime scaled \todo{approximately linearly or sublinearly} with sample count,
-with Kraken 2 database loading and HUMAnN searches accounting for the largest
-resource requirements.
-
-\subsection{Environmental application}
-
-The environmental analysis identified \todo{N} concordant bacterial or
-archaeal taxa, \todo{N} concordant fungal taxa, \todo{N} credible single-assay
-detections, and \todo{N} probable contaminants. Cross-assay analysis showed
-that \todo{main ecological result}.
-
-Control-aware integration changed the interpretation of \todo{specific
-comparison}. Before control evaluation, \todo{taxon or community pattern}
-appeared enriched in \todo{group}; however, the signal was associated with
-\todo{control type or batch}. After paired-control filtering, \todo{robust
-conclusion}. Conversely, \todo{taxon} was retained despite weak detection in
-\todo{assay} because it was strongly supported by \todo{other assay}, absent
-from linked controls, and predicted to fall below the detection range of
-\todo{assay}.
-
-These results demonstrate that TRIARCHY does not require all assays to report
-identical profiles. Instead, it identifies which biological conclusions remain
-supported after assay scope, taxonomic resolution, and contamination are
-considered.
-
-\section{Discussion}
-
-TRIARCHY provides a reproducible framework for studies generating matched
-shotgun, 16S, and ITS sequencing. Its distinguishing feature is not the
-execution of three established analytical branches, but the interpretation
-layer connecting them.
-
-The workflow addresses three recurring sources of error. First, it prevents
-assay-native relative abundances from being treated as directly interchangeable.
-Second, it compares taxonomic assignments only at a defensible shared rank
-while retaining database provenance and mapping uncertainty. Third, it
-evaluates contamination using controls linked to the relevant experimental
-stages and processing batches.
-
-TRIARCHY is complementary to existing methods. Greengenes2 can supply a shared
-bacterial and archaeal reference space, \software{decontam} can contribute
-feature-level contamination statistics, and established tools such as DADA2,
-Kraken 2, Bracken, and HUMAnN generate modality-specific profiles. TRIARCHY
-integrates these outputs to explain why assays agree or disagree.
-
-Several limitations remain. An evidence classification cannot establish
-biological truth in the absence of adequate controls or benchmark data. Assay
-reliability estimates may not transfer across extraction protocols, primer
-sets, environments, or reference-database releases. Fungal harmonization
-remains constrained by incomplete genome representation and unstable
-nomenclature. The noisy-OR score also assumes that assay evidence is
-sufficiently distinct to be combined, even though the assays may share
-extraction and contamination processes. TRIARCHY therefore exposes every score
-component and decision reason rather than presenting the integrated score as an
-opaque probability.
-
-Future development will incorporate hierarchical models of latent community
-composition, long-read sequencing, absolute abundance measurements, and
-study-specific empirical detection curves. The current implementation provides
-a practical foundation for determining which environmental microbiome findings
-are supported across complementary sequencing assays and which are explained
-more plausibly by technical limitations.
+\section*{Data availability}
+The software, test data, benchmark truth tables, reference manifests and
+example report are available at \url{https://github.com/aglucaci/TRIARCHY} and
+\todo{DOI}. Publicly
+available datasets used in the results are cited in the reference list or
+listed with accessions in the Supplementary Material.
 
 \section*{Acknowledgements}
-The authors thank \todo{individuals, consortia, and core facilities} for
-contributions to workflow design, benchmark generation, and environmental
-sampling.
+The authors thank the members of the Mason Lab for workflow design, benchmark
+generation and environmental sampling input.
 
 \section*{Funding}
-This work was supported by \todo{funding agency and grant number}, \todo{funding
-agency and grant number}, and \todo{institutional support}.
+This work was supported by \todo{funding agency and grant number}.
 
 \section*{Conflict of interest}
 The authors declare no competing interests.
 
-\section*{Data availability}
-The synthetic benchmark datasets, truth tables, metadata schemas, and report
-outputs are available at \todo{data repository and DOI}. Raw sequencing data
-for the physical standards and environmental application are available under
-accession \todo{accession}. Reference-database manifests and checksums are
-archived with the software release.
-
 \section*{Author contributions}
 Alexander G. Lucaci: Conceptualization, Methodology, Software, Formal analysis,
-Visualization, Writing---original draft, and Project administration.
-\todo{Co-author}: \todo{contributions}. \todo{Senior author}: Supervision,
-Funding acquisition, and Writing---review and editing.
+Visualization, Writing--original draft and Project administration.
+Phoebe Ledins: Conceptualization, Methodology, Investigation and
+Writing--review and editing. Elizabeth Henaff: Conceptualization,
+Methodology, Investigation and Writing--review and editing. Anna Dyson:
+Conceptualization, Supervision and Writing--review and editing.
+Christopher E. Mason: Conceptualization, Supervision, Funding acquisition and
+Writing--review and editing.
 
 \section*{Figure legend}
-\noindent\textbf{Figure 1. TRIARCHY workflow and cross-assay evidence model.}
-Input manifests and experimental control relationships are validated and
-reconciled into a unified sample table. Shotgun metagenomic, 16S, and ITS
-libraries are processed using modality-specific branches. Taxonomic outputs are
-converted into canonical lineages while preserving source-database identifiers
-and mapping confidence. Sample-linked field, extraction, PCR, and library
-controls contribute contamination evidence. TRIARCHY integrates assay quality,
-detection support, assay reliability, taxonomic compatibility, and
-contamination evidence without pooling assay-native relative abundances. Each
-sample--taxon combination is classified as concordant, single-assay supported,
-assay-limited, rank-limited, reference-limited, probable contaminant,
-discordant, or indeterminate. Assay-native diversity, cross-assay ecological
-concordance, and functional profiles are summarized in an interactive report.
+\noindent\textbf{Figure 1: TRIARCHY workflow architecture.} The TRIARCHY
+workflow integrates matched, or deliberately subsetted, whole-metagenome
+shotgun (WMS), 16S rRNA gene and fungal ITS sequencing data without merging
+assay-native abundance estimates. The workflow begins with a sample manifest,
+paired-control table, evidence policy and assay-performance configuration. A
+metadata validator checks library identifiers, FASTQ availability, paired-read
+structure, sample roles, assay labels, batches and control relationships, then
+constructs a stage-, assay- and batch-specific sample--control graph linking
+field, extraction, PCR, library and sequencing controls only to the samples for
+which they are informative. WMS, 16S and ITS libraries are processed in
+parallel assay-native branches: WMS reads undergo quality trimming, host-read
+depletion, taxonomic profiling and functional profiling; 16S libraries undergo
+primer/adaptor trimming, ASV inference and bacterial/archaeal taxonomic
+assignment; ITS libraries undergo primer/adaptor trimming, ITS-region
+extraction, ASV inference and fungal taxonomic assignment. The integration
+layer summarizes library quality, linked-control prevalence, sample-to-control
+abundance enrichment, batch localization, taxonomic harmonization, rank roll-up
+and provenance-preserving canonical taxon mapping. Stage I estimates
+sample--taxon biological authenticity from positive assay evidence, detection
+power, reference coverage, mapping confidence, primer compatibility and
+contamination penalties. Stage II assigns an explanatory cross-assay status,
+distinguishing concordant detections from assay-limited, taxonomy-limited,
+control-associated, genuine-discordance and indeterminate cases. Outputs
+include raw, control-annotated and high-confidence assay-native profiles;
+integrated taxon evidence with authenticity scores and decision reasons;
+contamination summaries by control stage or batch; assay-specific ecological
+diversity summaries; WMS functional profiles; reference and parameter
+provenance; and an HTML report. Missing-by-design assays reduce the scope of
+inference rather than being treated as measured negative evidence.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

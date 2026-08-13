@@ -233,9 +233,17 @@ class IntegrationTests(unittest.TestCase):
             self.assertEqual(1, len(evidence))
             row = evidence[0]
             self.assertEqual("concordant_detection", row["classification"])
+            self.assertEqual("concordant", row["cross_assay_status"])
+            self.assertIn(
+                row["authenticity_state"],
+                {"biologically_supported", "indeterminate"},
+            )
+            self.assertEqual("exact_or_canonical_agreement", row["taxonomic_compatibility_status"])
             self.assertEqual("genus", row["comparison_rank"])
             self.assertEqual("1", row["sample_evidence_rank"])
             self.assertGreater(float(row["presence_score"]), 0)
+            self.assertGreater(float(row["biological_authenticity"]), 0)
+            self.assertGreaterEqual(float(row["authenticity_ci_high"]), float(row["authenticity_ci_low"]))
             self.assertEqual(
                 "synthetic_only_not_empirically_calibrated",
                 row["calibration_status"],
@@ -290,6 +298,8 @@ class IntegrationTests(unittest.TestCase):
             )
             row = read_tsv(output)[0]
             self.assertEqual("rank_limited_agreement", row["classification"])
+            self.assertEqual("taxonomy_limited", row["cross_assay_status"])
+            self.assertEqual("hierarchical_agreement", row["taxonomic_compatibility_status"])
             self.assertEqual("genus", row["comparison_rank"])
 
     def test_evidence_v3_explains_distinct_nondetections_and_contamination(self) -> None:
@@ -383,9 +393,14 @@ class IntegrationTests(unittest.TestCase):
                 observed[("S_CONT", "T_CONT")]["classification"],
             )
             self.assertEqual(
+                "contamination_associated",
+                observed[("S_CONT", "T_CONT")]["cross_assay_status"],
+            )
+            self.assertEqual(
                 "cross_contamination_candidate",
                 observed[("S_CROSS", "T_CROSS")]["classification"],
             )
+            self.assertEqual("batch", observed[("S_CROSS", "T_CROSS")]["probable_contamination_source"])
             self.assertEqual(
                 "genuine_discordance",
                 observed[("S_DISC", "T_DISC")]["classification"],

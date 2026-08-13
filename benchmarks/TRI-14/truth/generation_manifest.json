@@ -103,7 +103,7 @@
     "references/artificial_fungal.fasta": "750ef7aca1cac71aee0c4c902c20f67692139e52d2d87c3abb123fc0a8399a33",
     "references/artificial_host.fasta": "185e941aae31def540f5863110d72b1b445a741ad1f6a266d675b515fb9f7f0a",
     "truth/community_members.tsv": "f180a2b3daa2b9e173c2c5835d1e1584e1adbb90b1b9d6a3f4d800fa52f71daa",
-    "truth/contaminants.tsv": "16fa29d87d74b8684b3eb6d989ae62081a0f347dc9d5d23226f76fa60177c544",
+    "truth/contaminants.tsv": "dd8f59cc56d1cf095e50f555263f9908682cdd679a3d660100d65ea4d1be4a61",
     "truth/control_relationships.tsv": "98387040d072b49f3fd2ff63f6701dc6a14752047b579305895dd5e6c92292d9",
     "truth/expected_assertions.json": "61af62913f9bc3c44c42e3468d9d0bffc3fa14e464203034bb3be2e264d7222f",
     "truth/expected_modality_status.tsv": "5d589b08aa1a8bbf2e1e00efa0984f969eb200fa5db563082b499271771782b0",
@@ -118,12 +118,13 @@
     "truth/sample_composition_genome_copy.tsv": "a35ed7e37411f8f3415e1b3b228f2687e8eb8a8a5067545b4d177f7d8c6faa37",
     "truth/sample_composition_genomic_dna.tsv": "c08d2232a2c52fbc207dd6c1e11b7958ace32bf70e8583ec789c82c41ed4e3c8",
     "truth/sample_composition_its.tsv": "d3a4898d28d456553d73f6d007da4f4ad38648e7bbbce53d017592b785471208",
-    "truth/taxonomic_crosswalk.tsv": "0d6e81f186a3dbd8210beacca584ea8bbea4fbe07d2fa26d65c0d0cc647019a7",
+    "truth/taxonomic_crosswalk.tsv": "048269ddd91d335eeb753d14ad56d7a92c77418cbb98f5a464d53eda049a9d72",
     "truth/true_16s_asvs.fasta": "8de764f6815fb05731f7bf0c7061b40120b8bd61a576b8b3ddb9e9591a697537",
     "truth/true_its_asvs.fasta": "a7924723b49b11915327fad67f48110439a1f2c6997630b7ae3e7a271723d86e"
   },
   "copy_number_assumptions": "community_members.tsv",
   "dataset_id": "TRI-14",
+  "designed_full_scale_paired_end_reads": null,
   "generator": "scripts/generate_benchmark_datasets.py",
   "generator_version": "2.0.0",
   "insert_size_model": "fixed deterministic paired surrogate",
@@ -148,6 +149,7 @@
     "Kraken2": "standard_frozen_2026_01",
     "SILVA": "138.2"
   },
+  "sample_count": 16,
   "schema_version": "2.0",
   "sequencing_error_model": "perfect CI reads with scenario flags in expected_sample_qc.tsv",
   "simulator": {

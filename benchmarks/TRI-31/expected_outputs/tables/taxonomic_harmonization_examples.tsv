@@ -1,0 +1,4 @@
+taxon	source_assay	source_rank	comparison_rank	expected_classification	reason
+BAC_A/B	16S	genus	genus	rank_limited_agreement	Marker evidence cannot safely distinguish the two designed close relatives.
+FUN_B	WMS	genus	genus	reference_limited	ITS resolves the fungal signal more strongly than the lightweight WMS reference.
+BAC_D	16S	species	species	assay_limited_nondetection	16S recovery is deliberately reduced by primer bias.

@@ -1,0 +1,7 @@
+pathway_id	feature_family	expected_peak_environment
+PWY-AEROBIC-RESP	core_metabolism	all
+PWY-PLANT-CARBON	plant_carbon	outdoor_air;settled_dust
+PWY-SKIN-LIPID	skin_lipid	return_air
+PWY-BIOFILM	biofilm	settled_dust
+PWY-METHANOGENESIS	archaeal_methanogenesis	settled_dust
+PWY-FUNGAL-STRESS	fungal_stress	outdoor_air

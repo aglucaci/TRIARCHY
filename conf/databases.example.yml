@@ -1,0 +1,34 @@
+schema_version: 1
+profile: minimal
+description: Example TRIARCHY reference manifest. Replace paths and checksums with the submitted release values.
+references:
+  - id: host_bowtie2
+    kind: bowtie2_index
+    version: artificial-minimal
+    path: host/artificial_host
+    required: true
+  - id: kraken2_bracken
+    kind: kraken2_database
+    version: minimal-test
+    path: kraken2
+    required: true
+  - id: humann_chocophlan
+    kind: humann_nucleotide
+    version: demo
+    path: humann/chocophlan
+    required: true
+  - id: humann_uniref
+    kind: humann_protein
+    version: demo
+    path: humann/uniref
+    required: true
+  - id: silva_16s
+    kind: dada2_taxonomy
+    version: example
+    path: marker/16s_taxonomy.fa.gz
+    required: true
+  - id: unite_its
+    kind: dada2_taxonomy
+    version: example
+    path: marker/its_taxonomy.fa.gz
+    required: true

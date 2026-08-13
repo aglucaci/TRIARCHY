@@ -175,7 +175,7 @@
     "references/artificial_fungal.fasta": "bb382249b3be6085cfa2be0450a86090d882963c73d10ef210575a75b93bac2c",
     "references/artificial_host.fasta": "185e941aae31def540f5863110d72b1b445a741ad1f6a266d675b515fb9f7f0a",
     "truth/community_members.tsv": "0b9ea9520691e1e2df89e9d754d971a49baa2e0990cf687bcc58946ad667e32c",
-    "truth/contaminants.tsv": "16fa29d87d74b8684b3eb6d989ae62081a0f347dc9d5d23226f76fa60177c544",
+    "truth/contaminants.tsv": "dd8f59cc56d1cf095e50f555263f9908682cdd679a3d660100d65ea4d1be4a61",
     "truth/control_relationships.tsv": "5a43ac1b06bc2bf3e185825f9c442011315f93c2182bf9334cd109013be56b51",
     "truth/expected_assertions.json": "6937ec6dd37350eb86facdb8ac10967066ac5e0359c9b4f914b6c88a8c52dc78",
     "truth/expected_modality_status.tsv": "096622762bf61c1738fcb0d5b246fba7d35b48028481dcdfe625f1b4c9f915f0",
@@ -190,12 +190,13 @@
     "truth/sample_composition_genome_copy.tsv": "4e8dc824d9d7c39af6ed4462da635e5b44a773e43e231704e3424a7c41078179",
     "truth/sample_composition_genomic_dna.tsv": "acf511f2e2f3b4094b0d1c3ed4aa2cf8dea3084b95bd0a6800177518e39bff2c",
     "truth/sample_composition_its.tsv": "5e952960d8bf96e668893d4c1091eb65d48d1610f6a19da2ab9305337dc0dbb7",
-    "truth/taxonomic_crosswalk.tsv": "0d6e81f186a3dbd8210beacca584ea8bbea4fbe07d2fa26d65c0d0cc647019a7",
+    "truth/taxonomic_crosswalk.tsv": "048269ddd91d335eeb753d14ad56d7a92c77418cbb98f5a464d53eda049a9d72",
     "truth/true_16s_asvs.fasta": "303c79a8e87a2cb56883ce27e2bc57a8139504dcc4c0c12fbd7e659b3a6f84a1",
     "truth/true_its_asvs.fasta": "ed33f88ea2a9c8263e02531d55fa66a1819173f079795719d9f85e74dbfd1c72"
   },
   "copy_number_assumptions": "community_members.tsv",
   "dataset_id": "TRI-19",
+  "designed_full_scale_paired_end_reads": null,
   "generator": "scripts/generate_benchmark_datasets.py",
   "generator_version": "2.0.0",
   "insert_size_model": "fixed deterministic paired surrogate",
@@ -211,7 +212,7 @@
     "ITS_reverse": "TCCTCCGCTTATTGATATGC"
   },
   "provenance_class": "synthetic",
-  "purpose": "Measure within-run, between-run, and extraction-batch stability of evidence classifications.",
+  "purpose": "Measure within-run, between-run, and extraction-batch stability of authenticity and cross-assay explanations.",
   "random_seed": "SHA-256-derived per taxon/assay/mate",
   "read_length": 100,
   "reference_database_versions": {
@@ -220,6 +221,7 @@
     "Kraken2": "standard_frozen_2026_01",
     "SILVA": "138.2"
   },
+  "sample_count": 28,
   "schema_version": "2.0",
   "sequencing_error_model": "perfect CI reads with scenario flags in expected_sample_qc.tsv",
   "simulator": {

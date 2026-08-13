@@ -1,0 +1,109 @@
+library_id	control_library_id	control_stage	relationship	priority	reason
+OUTDOOR_AIR_01_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_01_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_01_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+OUTDOOR_AIR_01_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_01_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_01_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+OUTDOOR_AIR_01_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_01_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_01_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+OUTDOOR_AIR_02_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_02_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_02_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+OUTDOOR_AIR_02_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_02_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_02_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+OUTDOOR_AIR_02_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_02_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_02_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+OUTDOOR_AIR_03_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_03_WMS	EB02_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_03_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+OUTDOOR_AIR_03_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_03_16S	EB02_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_03_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+OUTDOOR_AIR_03_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+OUTDOOR_AIR_03_ITS	EB02_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+OUTDOOR_AIR_03_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SUPPLY_AIR_01_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_01_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_01_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SUPPLY_AIR_01_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_01_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_01_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SUPPLY_AIR_01_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_01_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_01_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SUPPLY_AIR_02_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_02_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_02_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SUPPLY_AIR_02_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_02_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_02_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SUPPLY_AIR_02_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_02_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_02_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SUPPLY_AIR_03_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_03_WMS	EB02_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_03_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SUPPLY_AIR_03_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_03_16S	EB02_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_03_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SUPPLY_AIR_03_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SUPPLY_AIR_03_ITS	EB02_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SUPPLY_AIR_03_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+RETURN_AIR_01_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_01_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_01_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+RETURN_AIR_01_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_01_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_01_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+RETURN_AIR_01_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_01_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_01_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+RETURN_AIR_02_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_02_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_02_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+RETURN_AIR_02_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_02_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_02_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+RETURN_AIR_02_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_02_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_02_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+RETURN_AIR_03_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_03_WMS	EB02_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_03_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+RETURN_AIR_03_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_03_16S	EB02_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_03_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+RETURN_AIR_03_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+RETURN_AIR_03_ITS	EB02_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+RETURN_AIR_03_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SETTLED_DUST_01_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_01_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_01_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SETTLED_DUST_01_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_01_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_01_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SETTLED_DUST_01_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_01_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_01_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SETTLED_DUST_02_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_02_WMS	EB01_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_02_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SETTLED_DUST_02_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_02_16S	EB01_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_02_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SETTLED_DUST_02_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_02_ITS	EB01_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_02_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
+SETTLED_DUST_03_WMS	FIELD_BLANK_WMS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_03_WMS	EB02_WMS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_03_WMS	WMS_LIB_BLANK_WMS	library	run_level	3	showcase WMS library blank
+SETTLED_DUST_03_16S	FIELD_BLANK_16S	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_03_16S	EB02_16S	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_03_16S	PCR_BLANK_16S_16S	pcr	run_level	3	showcase 16S PCR blank
+SETTLED_DUST_03_ITS	FIELD_BLANK_ITS	field	run_level	1	showcase field blank shared across environmental sampling states
+SETTLED_DUST_03_ITS	EB02_ITS	extraction	same_batch	2	showcase batch-specific extraction blank
+SETTLED_DUST_03_ITS	PCR_BLANK_ITS_ITS	pcr	run_level	3	showcase ITS PCR blank
