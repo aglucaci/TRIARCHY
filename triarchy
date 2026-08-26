@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Publication-facing command line helpers for TRIARCHY.
+"""Production command line interface for TRIARCHY.
 
-The Nextflow workflow remains the primary execution engine. This wrapper gives
-users stable preflight and reference-manifest commands that are cheap to run
-before scheduling a large analysis.
+TRIARCHY runs and validates real sequencing studies and manages the production
+reference installation behind one stable command.
 """
 
 from __future__ import annotations
@@ -22,10 +21,23 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_metadata import MetadataError, read_tsv, validate  # noqa: E402
+
+
+PRODUCTION_PROFILES = (
+    "laptop",
+    "local",
+    "workstation",
+    "high_memory",
+    "docker",
+    "apptainer",
+    "singularity",
+    "slurm",
+    "cloud",
+)
 
 
 def sha256(path: Path) -> str:
@@ -235,6 +247,66 @@ def command_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_run(args: argparse.Namespace) -> int:
+    preflight = argparse.Namespace(
+        samples=args.samples,
+        controls=args.controls,
+        check_fastqs=True,
+        databases=None,
+        database_destination=None,
+        report=None,
+    )
+    if command_validate(preflight):
+        return 2
+
+    version_file = ROOT / ".nextflow-version"
+    main_script = ROOT / "main.nf"
+    reference_config = ROOT / "conf" / "references.config"
+    primer_config = ROOT / "conf" / "primers.config"
+    local_nextflow = ROOT / ".tools" / "bin" / "nextflow"
+
+    for required in (version_file, main_script, primer_config, reference_config):
+        if not required.exists():
+            print(f"ERROR: required production file is missing: {required}", file=sys.stderr)
+            if required == reference_config:
+                print("Run ./install.sh to install the full production references.", file=sys.stderr)
+            return 2
+
+    nextflow = str(local_nextflow) if local_nextflow.is_file() else shutil.which("nextflow")
+    if not nextflow:
+        print("ERROR: Nextflow is not installed; run ./install.sh first.", file=sys.stderr)
+        return 2
+
+    command = [
+        nextflow,
+        "run",
+        str(main_script),
+        "-profile",
+        args.profile,
+        "-c",
+        str(reference_config),
+        "--samples",
+        str(args.samples.resolve()),
+        "--controls",
+        str(args.controls.resolve()),
+        "--outdir",
+        str(args.outdir),
+    ]
+    if args.resume:
+        command.append("-resume")
+    extra = list(args.nextflow_args or [])
+    if extra and extra[0] == "--":
+        extra.pop(0)
+    command.extend(extra)
+
+    env = os.environ.copy()
+    env.setdefault("NXF_HOME", str(ROOT / ".nextflow"))
+    env.setdefault("NXF_VER", version_file.read_text(encoding="utf-8").strip())
+    print(f"TRIARCHY: starting production run with profile {args.profile}")
+    completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
+    return completed.returncode
+
+
 def command_database_check(args: argparse.Namespace) -> int:
     try:
         report = check_databases(args.manifest, args.destination)
@@ -287,6 +359,15 @@ def command_database_install(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="triarchy", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+
+    run_parser = sub.add_parser("run", help="run a production TRIARCHY study")
+    run_parser.add_argument("--samples", type=Path, required=True, help="production sample manifest")
+    run_parser.add_argument("--controls", type=Path, required=True, help="production control relationships")
+    run_parser.add_argument("--outdir", type=Path, default=Path("results/study"))
+    run_parser.add_argument("--profile", choices=PRODUCTION_PROFILES, default="local")
+    run_parser.add_argument("--resume", action="store_true")
+    run_parser.add_argument("nextflow_args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    run_parser.set_defaults(func=command_run)
 
     validate_parser = sub.add_parser("validate", help="preflight metadata, FASTQs, and optional databases")
     validate_parser.add_argument("--input", "--samples", dest="samples", type=Path, required=True)

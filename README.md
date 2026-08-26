@@ -106,38 +106,33 @@ linked.
 Validate metadata before launching an expensive run:
 
 ```bash
-bin/triarchy validate \
+triarchy validate \
   --input /data/study/samples.tsv \
   --paired-controls /data/study/control_relationships.tsv
 ```
 
 ## Run production
 
-Use the production runner with real FASTQs and the primers actually used in
-the study:
+Run the production workflow with real FASTQs:
 
 ```bash
-./run_triarchy.sh \
-  -profile local \
+triarchy run \
+  --profile local \
   --samples /data/study/samples.tsv \
   --controls /data/study/control_relationships.tsv \
-  --cutadapt_16s_forward CCTACGGGNGGCWGCAG \
-  --cutadapt_16s_reverse GACTACHVGGGTATCTAATCC \
-  --cutadapt_its_forward GTGAATCATCGAATCTTTGAA \
-  --cutadapt_its_reverse TCCTCCGCTTATTGATATGC \
-  --itsxpress_region ITS2 \
   --outdir results/study
 ```
 
-The primer sequences above are examples, not defaults. Replace them with the
-study primers.
+Assay primers and the ITS target region are maintained centrally in
+`conf/primers.config`; users do not pass them on the command line. Update that
+controlled configuration when a production protocol changes.
 
-Resume an interrupted run with `-resume`:
+Resume an interrupted run with `--resume`:
 
 ```bash
-./run_triarchy.sh \
-  -profile local \
-  -resume \
+triarchy run \
+  --profile local \
+  --resume \
   --samples /data/study/samples.tsv \
   --controls /data/study/control_relationships.tsv \
   --outdir results/study

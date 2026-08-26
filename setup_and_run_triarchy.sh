@@ -6,14 +6,14 @@ readonly PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 usage() {
     cat <<'EOF'
 Usage:
-  ./setup_and_run_triarchy.sh [INSTALLER_OPTIONS] -- [NEXTFLOW_OPTIONS]
+  ./setup_and_run_triarchy.sh [INSTALLER_OPTIONS] -- [TRIARCHY_RUN_OPTIONS]
 
 Install the full TRIARCHY production environment and standard references, then
 run real sequencing data. Supply --samples and --controls after `--`.
 
 Example:
   ./setup_and_run_triarchy.sh --database-dir /Volumes/TRIARCHY/refs --cpus 8 --yes -- \
-    -profile laptop \
+    --profile laptop \
     --samples /data/study/samples.tsv \
     --controls /data/study/control_relationships.tsv \
     --outdir results/study
@@ -36,4 +36,4 @@ while (($#)); do
 done
 
 bash "${PROJECT_DIR}/install.sh" ${install_args[@]+"${install_args[@]}"}
-bash "${PROJECT_DIR}/run_triarchy.sh" ${run_args[@]+"${run_args[@]}"}
+"${PROJECT_DIR}/triarchy" run ${run_args[@]+"${run_args[@]}"}

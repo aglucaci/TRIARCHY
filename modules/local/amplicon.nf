@@ -14,7 +14,7 @@ process AMPLICON_QC {
     def forward = assay == '16S' ? params.cutadapt_16s_forward : params.cutadapt_its_forward
     def reverse = assay == '16S' ? params.cutadapt_16s_reverse : params.cutadapt_its_reverse
     if (!forward) {
-        error "Production ${assay} execution requires primer parameters in nextflow.config or on the command line"
+        error "Production ${assay} primer configuration is missing; check conf/primers.config"
     }
     def paired = layout == 'paired'
     def inputArgs = paired ? "'${r1}' '${r2}'" : "'${r1}'"
@@ -48,7 +48,7 @@ process ITSXPRESS {
     script:
     def itsRegion = params.itsxpress_region ?: 'ITS2'
     if (!(itsRegion in ['ITS1', 'ITS2', 'ALL'])) {
-        error "--itsxpress_region must be ITS1, ITS2, or ALL"
+        error "ITS region configuration must be ITS1, ITS2, or ALL; check conf/primers.config"
     }
     def pairedArgs = layout == 'paired' ?
         "--fastq '${qc_dir}/R1.fastq.gz' --fastq2 '${qc_dir}/R2.fastq.gz' --outfile '${library_id}.itsxpress/R1.fastq.gz' --outfile2 '${library_id}.itsxpress/R2.fastq.gz'" :

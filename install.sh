@@ -293,6 +293,7 @@ ENV_PREFIX="$(
 )"
 [[ -x "${ENV_PREFIX}/bin/python3" ]] ||
     die "named environment ${ENV_NAME} is missing; run: mamba env create --file environment.yml"
+ln -sfn "${SCRIPT_DIR}/triarchy" "${ENV_PREFIX}/bin/triarchy"
 "${environment_manager}" list --name "${ENV_NAME}" --explicit >"${environment_lock}"
 
 if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
