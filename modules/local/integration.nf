@@ -186,6 +186,10 @@ process BUILD_REPORT {
     path alpha_diversity
     path beta_diversity
     path sample_confidence
+    path qc_metrics
+    path samples
+    path controls
+    path functions
     path evidence_model
     path provenance
 
@@ -200,6 +204,10 @@ process BUILD_REPORT {
         --alpha-diversity '${alpha_diversity}' \
         --beta-diversity '${beta_diversity}' \
         --sample-confidence '${sample_confidence}' \
+        --qc-metrics '${qc_metrics}' \
+        --samples '${samples}' \
+        --controls '${controls}' \
+        --functions '${functions}' \
         --evidence-model '${evidence_model}' \
         --provenance '${provenance}' \
         --output triarchy_report.html

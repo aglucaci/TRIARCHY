@@ -14,7 +14,7 @@ deactivation.
 
 Options:
   --env-prefix DIR   Conda environment prefix to configure
-  --install          Run `brew install bowtie2 bracken` first
+  --install          Run `brew install bowtie2 bracken diamond` first
   -h, --help         Show this help
 EOF
 }
@@ -54,14 +54,14 @@ command -v brew >/dev/null 2>&1 ||
     die "Homebrew is required: https://brew.sh"
 
 if [[ "${INSTALL_FORMULAS}" == true ]]; then
-    brew install bowtie2 bracken
+    brew install bowtie2 bracken diamond
 fi
 
 native_paths=()
-for formula in bowtie2 bracken kraken2; do
+for formula in bowtie2 bracken kraken2 diamond; do
     formula_prefix="$(brew --prefix "${formula}" 2>/dev/null || true)"
     [[ -d "${formula_prefix}/bin" ]] ||
-        die "Homebrew formula ${formula} is missing; run: brew install bowtie2 bracken"
+        die "Homebrew formula ${formula} is missing; run: brew install bowtie2 bracken diamond"
     native_paths+=("${formula_prefix}/bin")
 done
 native_path="$(IFS=:; printf '%s' "${native_paths[*]}")"
@@ -91,7 +91,7 @@ deactivate_hook="${deactivate_dir}/triarchy-native-tools.sh"
     printf '%s\n' 'unset TRIARCHY_NATIVE_TOOLS_ACTIVE'
 } >"${deactivate_hook}"
 
-printf 'Configured native tools for Conda environment: %s\n' "${ENV_PREFIX}"
+printf 'Configured native tools for Mamba environment: %s\n' "${ENV_PREFIX}"
 printf 'Native PATH prefix: %s\n' "${native_path}"
-printf 'Reactivate the environment to apply it: conda activate %s\n' \
+printf 'Reactivate the environment to apply it: mamba activate %s\n' \
     "${ENV_PREFIX}"

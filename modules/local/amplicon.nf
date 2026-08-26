@@ -33,14 +33,6 @@ process AMPLICON_QC {
     cp '${library_id}/cutadapt.json' '${library_id}.cutadapt.json'
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    touch '${library_id}/R1.fastq.gz'
-    if [[ '${layout}' == 'paired' ]]; then touch '${library_id}/R2.fastq.gz'; fi
-    printf '{"stub":true}\n' > '${library_id}/cutadapt.json'
-    cp '${library_id}/cutadapt.json' '${library_id}.cutadapt.json'
-    """
 }
 
 process ITSXPRESS {
@@ -54,9 +46,13 @@ process ITSXPRESS {
     tuple val(library_id), val(layout), val(assay), path("${library_id}.itsxpress"), emit: reads
 
     script:
+    def itsRegion = params.itsxpress_region ?: 'ITS2'
+    if (!(itsRegion in ['ITS1', 'ITS2', 'ALL'])) {
+        error "--itsxpress_region must be ITS1, ITS2, or ALL"
+    }
     def pairedArgs = layout == 'paired' ?
         "--fastq '${qc_dir}/R1.fastq.gz' --fastq2 '${qc_dir}/R2.fastq.gz' --outfile '${library_id}.itsxpress/R1.fastq.gz' --outfile2 '${library_id}.itsxpress/R2.fastq.gz'" :
-        "--fastq '${qc_dir}/R1.fastq.gz' --outfile '${library_id}.itsxpress/R1.fastq.gz'"
+        "--single_end --fastq '${qc_dir}/R1.fastq.gz' --outfile '${library_id}.itsxpress/R1.fastq.gz'"
     def emptyCopy = layout == 'paired' ?
         "cp '${qc_dir}/R1.fastq.gz' '${library_id}.itsxpress/R1.fastq.gz'; cp '${qc_dir}/R2.fastq.gz' '${library_id}.itsxpress/R2.fastq.gz'" :
         "cp '${qc_dir}/R1.fastq.gz' '${library_id}.itsxpress/R1.fastq.gz'"
@@ -67,15 +63,9 @@ process ITSXPRESS {
         ${emptyCopy}
         exit 0
     fi
-    itsxpress ${pairedArgs} --region ITS2 --taxa All --threads ${task.cpus}
+    itsxpress ${pairedArgs} --region ${itsRegion} --taxa All --threads ${task.cpus}
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}.itsxpress'
-    touch '${library_id}.itsxpress/R1.fastq.gz'
-    if [[ '${layout}' == 'paired' ]]; then touch '${library_id}.itsxpress/R2.fastq.gz'; fi
-    """
 }
 
 process DADA2_PROFILE {
@@ -103,13 +93,4 @@ process DADA2_PROFILE {
         '${taxonomy_reference}' '${library_id}'
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    python3 ${projectDir}/workflow/scripts/triarchy_integrate.py mock-profile \
-        --library-id '${library_id}' --assay '${assay}' \
-        --output '${library_id}/profile.tsv'
-    printf '>ASV1\\nACGTACGT\\n' > '${library_id}/asvs.fasta'
-    printf 'feature_id\\tcount\\nASV1\\t100\\n' > '${library_id}/asv_counts.tsv'
-    """
 }

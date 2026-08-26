@@ -1,4 +1,4 @@
-process WMS_QC {
+process WGS_QC {
     tag "${library_id}"
     label 'medium'
 
@@ -24,18 +24,9 @@ process WMS_QC {
     cp '${library_id}/fastp.json' '${library_id}.fastp.json'
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    touch '${library_id}/R1.fastq.gz'
-    if [[ '${layout}' == 'paired' ]]; then touch '${library_id}/R2.fastq.gz'; fi
-    printf '{"stub":true}\n' > '${library_id}/fastp.json'
-    cp '${library_id}/fastp.json' '${library_id}.fastp.json'
-    printf '<html><body>stub fastp</body></html>\n' > '${library_id}/fastp.html'
-    """
 }
 
-process WMS_HOST_REMOVAL {
+process WGS_HOST_REMOVAL {
     tag "${library_id}"
     label 'high'
 
@@ -68,18 +59,9 @@ process WMS_HOST_REMOVAL {
     ${rename}
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    touch '${library_id}/R1.fastq.gz'
-    if [[ '${layout}' == 'paired' ]]; then touch '${library_id}/R2.fastq.gz'; fi
-    printf 'stub host removal\n' > '${library_id}/bowtie2.metrics.txt'
-    printf '0.00%% overall alignment rate\n' > '${library_id}/bowtie2.log'
-    cp '${library_id}/bowtie2.log' '${library_id}.bowtie2.log'
-    """
 }
 
-process WMS_TAXONOMY {
+process WGS_TAXONOMY {
     tag "${library_id}"
     label 'high'
 
@@ -87,8 +69,8 @@ process WMS_TAXONOMY {
     tuple val(library_id), val(layout), path(clean_dir)
 
     output:
-    tuple val(library_id), path("${library_id}/profile.tsv"), emit: profile
-    path "${library_id}", emit: native_files
+    tuple val(library_id), path("${library_id}.taxonomy/profile.tsv"), emit: profile
+    path "${library_id}.taxonomy", emit: native_files
 
     script:
     if (!params.kraken2_db) {
@@ -101,33 +83,24 @@ process WMS_TAXONOMY {
     """
     command -v kraken2 >/dev/null || { echo 'kraken2 is required' >&2; exit 127; }
     command -v bracken >/dev/null || { echo 'bracken is required' >&2; exit 127; }
-    mkdir -p '${library_id}'
+    mkdir -p '${library_id}.taxonomy'
     kraken2 --db '${krakenDb}' ${reads} \
         --threads ${task.cpus} \
-        --report '${library_id}/kraken2.report' \
-        --output '${library_id}/kraken2.output'
+        --report '${library_id}.taxonomy/kraken2.report' \
+        --output '${library_id}.taxonomy/kraken2.output'
     bracken -d '${krakenDb}' \
-        -i '${library_id}/kraken2.report' \
-        -o '${library_id}/bracken.species.tsv' \
+        -i '${library_id}.taxonomy/kraken2.report' \
+        -o '${library_id}.taxonomy/bracken.species.tsv' \
         -r ${params.bracken_read_length} -l S
     python3 ${projectDir}/workflow/scripts/triarchy_integrate.py standardize-bracken \
         --library-id '${library_id}' \
-        --input '${library_id}/bracken.species.tsv' \
-        --output '${library_id}/profile.tsv'
+        --input '${library_id}.taxonomy/bracken.species.tsv' \
+        --output '${library_id}.taxonomy/profile.tsv'
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    printf 'name\\ttaxonomy_id\\ttaxonomy_lvl\\tkraken_assigned_reads\\tadded_reads\\tnew_est_reads\\tfraction_total_reads\\n' > '${library_id}/bracken.species.tsv'
-    python3 ${projectDir}/workflow/scripts/triarchy_integrate.py mock-profile \
-        --library-id '${library_id}' --assay WMS \
-        --output '${library_id}/profile.tsv'
-    touch '${library_id}/kraken2.report' '${library_id}/kraken2.output'
-    """
 }
 
-process WMS_FUNCTIONS {
+process WGS_FUNCTIONS {
     tag "${library_id}"
     label 'high'
 
@@ -135,37 +108,33 @@ process WMS_FUNCTIONS {
     tuple val(library_id), val(layout), path(clean_dir)
 
     output:
-    tuple val(library_id), path("${library_id}/functions.tsv"), emit: profile
-    path "${library_id}", emit: native_files
+    tuple val(library_id), path("${library_id}.functions/functions.tsv"), emit: profile
+    path "${library_id}.functions", emit: native_files
 
     script:
     def prep = layout == 'paired' ?
-        "zcat '${clean_dir}/R1.fastq.gz' '${clean_dir}/R2.fastq.gz' | gzip -c > '${library_id}/combined.fastq.gz'" :
-        "cp '${clean_dir}/R1.fastq.gz' '${library_id}/combined.fastq.gz'"
+        "cat '${clean_dir}/R1.fastq.gz' '${clean_dir}/R2.fastq.gz' > '${library_id}.functions/combined.fastq.gz'" :
+        "cp '${clean_dir}/R1.fastq.gz' '${library_id}.functions/combined.fastq.gz'"
     def humannDb = params.humann_db ?
         file(params.humann_db, checkIfExists: true) : null
     def humannProteinDb = params.humann_protein_db ?
         file(params.humann_protein_db, checkIfExists: true) : null
     def nucleotideArg = humannDb ? "--nucleotide-database '${humannDb}'" : ''
     def proteinArg = humannProteinDb ? "--protein-database '${humannProteinDb}'" : ''
+    def prescreenArg = params.humann_bypass_prescreen ? '--bypass-prescreen' : ''
     """
     command -v humann >/dev/null || { echo 'humann is required' >&2; exit 127; }
-    mkdir -p '${library_id}'
+    command -v diamond >/dev/null || { echo 'diamond is required by HUMAnN' >&2; exit 127; }
+    diamond version >/dev/null || { echo 'diamond is installed but cannot execute on this platform' >&2; exit 126; }
+    mkdir -p '${library_id}.functions'
     ${prep}
-    humann --input '${library_id}/combined.fastq.gz' \
-        --output '${library_id}/humann' \
-        --threads ${task.cpus} ${nucleotideArg} ${proteinArg}
+    humann --input '${library_id}.functions/combined.fastq.gz' \
+        --output '${library_id}.functions/humann' \
+        --threads ${task.cpus} ${nucleotideArg} ${proteinArg} ${prescreenArg}
     python3 ${projectDir}/workflow/scripts/triarchy_integrate.py standardize-humann \
         --library-id '${library_id}' \
-        --input-dir '${library_id}/humann' \
-        --output '${library_id}/functions.tsv'
+        --input-dir '${library_id}.functions/humann' \
+        --output '${library_id}.functions/functions.tsv'
     """
 
-    stub:
-    """
-    mkdir -p '${library_id}'
-    python3 ${projectDir}/workflow/scripts/triarchy_integrate.py mock-functions \
-        --library-id '${library_id}' \
-        --output '${library_id}/functions.tsv'
-    """
 }

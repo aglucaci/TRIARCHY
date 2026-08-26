@@ -1,7 +1,0 @@
-biological_sample_id	taxon	expected_fraction	truth_scale
-BIO_A	Aspergillus_fumigatus	0.3600000000	its
-BIO_A	Candida_albicans	0.6400000000	its
-BIO_B	Aspergillus_fumigatus	0.3600000000	its
-BIO_B	Candida_albicans	0.6400000000	its
-POS_MOCK	Saccharomyces_cerevisiae	0.7317073171	its
-POS_MOCK	Cryptococcus_neoformans	0.2682926829	its

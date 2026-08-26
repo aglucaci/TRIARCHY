@@ -11,7 +11,7 @@ process VALIDATE_METADATA {
 
     script:
     """
-    python3 ${projectDir}/scripts/validate_benchmark_metadata.py \
+    python3 ${projectDir}/scripts/validate_metadata.py \
         '${samples}' '${controls}'
     touch metadata.validated
     """

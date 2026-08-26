@@ -25,7 +25,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from validate_benchmark_metadata import MetadataError, read_tsv, validate  # noqa: E402
+from validate_metadata import MetadataError, read_tsv, validate  # noqa: E402
 
 
 def sha256(path: Path) -> str:
@@ -263,7 +263,6 @@ def command_database_install(args: argparse.Namespace) -> int:
         "bash" if platform.system() == "Windows" else str(installer),
         str(installer) if platform.system() == "Windows" else "",
         "--database-dir", str(args.destination),
-        "--database-profile", args.profile,
     ]
     command = [item for item in command if item]
     if args.yes:
@@ -309,7 +308,6 @@ def build_parser() -> argparse.ArgumentParser:
     install = database_sub.add_parser("install", help="run the checkpointed TRIARCHY database installer")
     install.add_argument("--manifest", type=Path, help="optional manifest to verify after installation")
     install.add_argument("--destination", type=Path, required=True)
-    install.add_argument("--profile", choices=("minimal", "standard"), default="minimal")
     install.add_argument("--kraken-archive", type=Path)
     install.add_argument("--download-attempts", type=int)
     install.add_argument("--yes", action="store_true")

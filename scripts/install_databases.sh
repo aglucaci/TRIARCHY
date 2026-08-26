@@ -6,7 +6,7 @@ readonly PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 DATABASE_DIR="${PROJECT_DIR}/references/data"
 ENV_PREFIX="${PROJECT_DIR}/.tools/env"
 CPUS="${TRIARCHY_INSTALL_CPUS:-4}"
-PROFILE="standard"
+readonly PROFILE="standard"
 KRAKEN_ARCHIVE=""
 ASSUME_YES=false
 CURRENT_STEP=0
@@ -44,31 +44,21 @@ Options:
   --database-dir DIR   Destination (default: references/data)
   --env-prefix DIR     Dependency environment (default: .tools/env)
   --cpus N             Build threads (default: 4)
-  --profile PROFILE    standard or minimal (default: standard)
   --kraken-archive FILE
                        Use an existing PlusPFP .tar.gz instead of downloading
   --yes                Accept the large download without prompting
   -h, --help           Show this help
 
-Profiles:
-  minimal   Tiny host index, SILVA, ITS taxonomy, HUMAnN demo databases, and a
-            Kraken2 test database suitable only for installation checks.
-  standard  Host index, SILVA, ITS taxonomy, full HUMAnN ChocoPhlAn/UniRef90,
-            and the prebuilt June 2026 Kraken2 PlusPFP database with Bracken
-            distributions. PlusPFP contains archaea, bacteria, viruses,
-            fungi, protozoa, plants, human, plasmids, and UniVec_Core.
+The installer provisions the full host, SILVA, ITS, HUMAnN ChocoPhlAn/UniRef90,
+and Kraken2 PlusPFP/Bracken production references.
 
 Overrides:
   TRIARCHY_SILVA_URL   DADA2-compatible SILVA archive
   TRIARCHY_ITS_URL     DADA2-compatible ITS taxonomy archive
   TRIARCHY_HUMAN_ACCESSION  NCBI assembly accession
-  TRIARCHY_MINIMAL_HOST_ACCESSION  Minimal-profile FASTA accession label
-  TRIARCHY_MINIMAL_HOST_URL  Minimal-profile host FASTA URL
   TRIARCHY_KRAKEN_URL  Prebuilt Kraken2 archive URL
   TRIARCHY_KRAKEN_MD5_URL  Prebuilt Kraken2 checksum-manifest URL
   TRIARCHY_KRAKEN_SIZE  Expected archive size in bytes
-  TRIARCHY_MINIMAL_KRAKEN_MAX_DB_SIZE
-                     Maximum bytes for the minimal Kraken2 hash (default: 33554432)
   TRIARCHY_DOWNLOAD_ATTEMPTS  Retry attempts per download stage (default: 8)
   NO_COLOR             Disable ANSI colors
 EOF
@@ -262,11 +252,6 @@ while (($#)); do
             CPUS="$2"
             shift 2
             ;;
-        --profile)
-            (($# >= 2)) || die "--profile requires minimal or standard"
-            PROFILE="$2"
-            shift 2
-            ;;
         --kraken-archive)
             (($# >= 2)) || die "--kraken-archive requires a file"
             KRAKEN_ARCHIVE="$2"
@@ -286,8 +271,6 @@ while (($#)); do
     esac
 done
 
-[[ "${PROFILE}" == "minimal" || "${PROFILE}" == "standard" ]] ||
-    die "database profile must be minimal or standard"
 [[ "${CPUS}" =~ ^[1-9][0-9]*$ ]] || die "--cpus must be a positive integer"
 [[ -x "${ENV_PREFIX}/bin/python3" ]] ||
     die "dependency environment is missing; run ./install.sh first"
@@ -297,14 +280,14 @@ if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
         die "Apple-silicon installation requires Homebrew; install it, then run: brew install bowtie2 bracken"
     HOMEBREW_PREFIX="$(brew --prefix)"
     export PATH="${HOMEBREW_PREFIX}/bin:${ENV_PREFIX}/bin:${PATH}"
-    for native_command in bowtie2-build kraken2-build bracken-build; do
+    for native_command in bowtie2-build; do
         command -v "${native_command}" >/dev/null 2>&1 ||
             die "missing native ${native_command}; run: brew install bowtie2 bracken"
     done
 else
     export PATH="${ENV_PREFIX}/bin:${PATH}"
 fi
-for command in datasets bowtie2-build kraken2-build bracken-build \
+for command in datasets bowtie2-build \
     humann_databases curl gzip unzip 7z sha256sum tar; do
     command -v "${command}" >/dev/null 2>&1 ||
         die "required dependency not found: ${command}"
@@ -326,17 +309,9 @@ fi
 
 mkdir -p "${DATABASE_DIR}"/{downloads,host,kraken2,humann,silva,its}
 DATABASE_DIR="$(cd -- "${DATABASE_DIR}" && pwd -P)"
-if [[ "${PROFILE}" == "minimal" ]]; then
-    kraken_db_dir="${DATABASE_DIR}/kraken2_minimal"
-else
-    kraken_db_dir="${DATABASE_DIR}/kraken2"
-fi
+kraken_db_dir="${DATABASE_DIR}/kraken2"
 mkdir -p "${kraken_db_dir}"
-if [[ "${PROFILE}" == "standard" ]]; then
-    TOTAL_STEPS=7
-else
-    TOTAL_STEPS=7
-fi
+TOTAL_STEPS=7
 CHECKPOINT_DIR="${DATABASE_DIR}/.triarchy-install/checkpoints/${PROFILE}"
 mkdir -p "${CHECKPOINT_DIR}"
 readonly CHECKPOINT_DIR
@@ -442,14 +417,6 @@ build_bowtie2_index() {
     fi
 }
 
-if [[ "${PROFILE}" == "minimal" ]]; then
-    human_accession="${TRIARCHY_MINIMAL_HOST_ACCESSION:-NC_012920.1}"
-    human_source="${TRIARCHY_MINIMAL_HOST_URL:-https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_012920.1&rettype=fasta&retmode=text}"
-    human_fasta="${DATABASE_DIR}/host/${human_accession}_minimal_host.fna"
-    host_index_base="${DATABASE_DIR}/host/minimal_host"
-    host_reference_label="Minimal host reference ${human_accession}"
-    host_index_label="Bowtie2 minimal host index"
-else
     human_accession="${TRIARCHY_HUMAN_ACCESSION:-GCF_000001405.40}"
     human_source="https://www.ncbi.nlm.nih.gov/datasets/genome/${human_accession}/"
     human_zip="${DATABASE_DIR}/downloads/${human_accession}.zip"
@@ -457,18 +424,11 @@ else
     host_index_base="${DATABASE_DIR}/host/grch38"
     host_reference_label="Human host reference ${human_accession}"
     host_index_label="Bowtie2 GRCh38 host index"
-fi
 
 if [[ -s "${human_fasta}" ]]; then
     stage_skip host_reference "${host_reference_label}"
 else
     stage_begin host_reference "${host_reference_label}"
-    if [[ "${PROFILE}" == "minimal" ]]; then
-        info "Downloading minimal host reference ${human_accession}"
-        download "${human_source}" "${human_fasta}"
-        grep -q '^>' "${human_fasta}" ||
-            die "minimal host reference did not contain FASTA records"
-    else
         info "Downloading human reference ${human_accession} from NCBI"
         datasets download genome accession "${human_accession}" \
             --include genome --filename "${human_zip}"
@@ -479,7 +439,6 @@ else
         )"
         [[ -n "${source_fasta}" ]] || die "NCBI package did not contain a genomic FASTA"
         cp "${source_fasta}" "${human_fasta}"
-    fi
     stage_complete
 fi
 
@@ -584,7 +543,7 @@ kraken_prebuilt_complete() {
         bracken_database_complete
 }
 
-if [[ "${PROFILE}" == "standard" ]]; then
+
     kraken_version="PlusPFP-20260626"
     kraken_url="${TRIARCHY_KRAKEN_URL:-https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_20260626.tar.gz}"
     kraken_md5_url="${TRIARCHY_KRAKEN_MD5_URL:-https://genome-idx.s3.amazonaws.com/kraken/pluspfp_20260626/pluspfp.md5}"
@@ -682,91 +641,23 @@ if [[ "${PROFILE}" == "standard" ]]; then
             die "HUMAnN UniRef90 download did not pass validation"
         stage_complete
     fi
-else
-    minimal_kraken_fasta="${DATABASE_DIR}/downloads/triarchy_minimal_kraken.fa"
-    if kraken_database_complete && bracken_database_complete; then
-        stage_skip kraken_taxonomy "Minimal Kraken2/Bracken test database"
-    else
-        stage_begin kraken_taxonomy "Minimal Kraken2/Bracken test database"
-        if ! kraken_taxonomy_complete; then
-            kraken2-build --download-taxonomy --skip-maps --use-ftp \
-                --db "${kraken_db_dir}"
-        fi
-        cat >"${minimal_kraken_fasta}" <<'EOF'
->triarchy_minimal_escherichia_coli|kraken:taxid|562
-ACGTTGCAAGTCGATCGATGCTAGCTAGGATCCGATCGATGCTAGCTAGCTACGATCGATCGATGCTAGCTAGGCTAGCTAGCATCGATCGATGCTAGCTAGCTAGGATCCGATCGATGCTAGCTAGCTACGATCGATCGATGCTAGCTAGGCTAGCTAGCATCGATCGATGCTAGCTAGCTAGGATCCGATCGATGCTAGCTAGCTACGATCGATCGATGCTAGCTAGGCTAGCTAGCATCGATCGATGCTAGCTAGCTAGGATCCGATCGATGCTAGCTAGCTACGATCGATCGATGCTAGCTAGGCTAGCTAGCATCGATCGATGCTAGCTAGCTAGGATCCGATCGATGCTAGCTAGCTACGATCGATCGATGCTAGCTAGGCTAGCTAGC
->triarchy_minimal_saccharomyces_cerevisiae|kraken:taxid|4932
-TTGACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTAACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTAACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTAACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTAACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTAACCGTACGATCGGCTAATCGATGGCATCGTACCGATGCTTACGATCGATGGCTA
-EOF
-        kraken2-build --add-to-library "${minimal_kraken_fasta}" \
-            --db "${kraken_db_dir}"
-        kraken2-build --build --threads "${CPUS}" \
-            --max-db-size "${TRIARCHY_MINIMAL_KRAKEN_MAX_DB_SIZE:-33554432}" \
-            --db "${kraken_db_dir}"
-        bracken-build -d "${kraken_db_dir}" -t "${CPUS}" -k 35 -l 150 \
-            -x "$(dirname -- "$(command -v kraken2)")" -y kraken2
-        kraken_database_complete ||
-            die "Minimal Kraken2 database did not pass validation"
-        bracken_database_complete ||
-            die "Minimal Bracken database did not pass validation"
-        stage_complete
-    fi
 
-    humann_chocophlan_file="$(
-        find "${DATABASE_DIR}/humann" -type f -name '*.ffn.gz' \
-            -size +0c -print -quit
-    )"
-    if [[ -n "${humann_chocophlan_file}" ]]; then
-        stage_skip humann_chocophlan "HUMAnN ChocoPhlAn demo database"
-    else
-        stage_begin humann_chocophlan "HUMAnN ChocoPhlAn demo database"
-        humann_databases --download chocophlan DEMO \
-            "${DATABASE_DIR}/humann" --update-config no
-        stage_complete
-    fi
-
-    humann_uniref_file="$(
-        find "${DATABASE_DIR}/humann" -type f -name '*.dmnd' \
-            -size +0c -print -quit
-    )"
-    if [[ -n "${humann_uniref_file}" ]]; then
-        stage_skip humann_uniref90 "HUMAnN UniRef demo database"
-    else
-        stage_begin humann_uniref90 "HUMAnN UniRef demo database"
-        humann_databases --download uniref DEMO_diamond \
-            "${DATABASE_DIR}/humann" --update-config no
-        stage_complete
-    fi
-fi
-
-humann_nucleotide="$(
-    find "${DATABASE_DIR}/humann" -type d \
-        -name 'full_chocophlan*' -print -quit
-)"
-humann_protein="$(
-    find "${DATABASE_DIR}/humann" -type d \
-        -name '*uniref*diamond*' -print -quit
-)"
-[[ -n "${humann_nucleotide}" ]] ||
-    humann_nucleotide="${DATABASE_DIR}/humann"
-[[ -n "${humann_protein}" ]] ||
-    humann_protein="${DATABASE_DIR}/humann"
-if [[ "${PROFILE}" == "standard" ]]; then
+humann_nucleotide="$(dirname -- "${humann_chocophlan_file}")"
+humann_protein="$(dirname -- "${humann_uniref_file}")"
     record kraken2 "${kraken_version}" "${kraken_url}" \
         "${kraken_db_dir}"
-else
-    record kraken2 "minimal-test" "kraken2-build --skip-maps" "${kraken_db_dir}"
-fi
 record humann_chocophlan "${PROFILE}" "humann_databases" "${humann_nucleotide}"
 record humann_uniref "${PROFILE}" "humann_databases" "${humann_protein}"
 
 config="${PROJECT_DIR}/conf/references.config"
+humann_bypass_prescreen=false
 cat >"${config}" <<EOF
 params {
     host_index = '${host_index_base}'
     kraken2_db = '${kraken_db_dir}'
     humann_db = '${humann_nucleotide}'
     humann_protein_db = '${humann_protein}'
+    humann_bypass_prescreen = ${humann_bypass_prescreen}
     s16_taxonomy = '${silva_fasta}'
     its_taxonomy = '${its_fasta}'
 }

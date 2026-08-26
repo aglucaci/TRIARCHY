@@ -1,7 +1,0 @@
-pathway_id	expected_peak_environment	interpretation
-PWY-AEROBIC-RESP	all	Core aerobic respiration signal.
-PWY-PLANT-CARBON	outdoor_air;settled_dust	Plant-associated carbon metabolism.
-PWY-SKIN-LIPID	return_air	Skin-associated lipid metabolism.
-PWY-BIOFILM	settled_dust	Surface and dust biofilm potential.
-PWY-METHANOGENESIS	settled_dust	Tracks the archaeal component.
-PWY-FUNGAL-STRESS	outdoor_air	Fungal stress-response functions.

@@ -8,44 +8,27 @@ readonly LOCAL_NEXTFLOW="${PROJECT_DIR}/.tools/bin/nextflow"
 usage() {
     cat <<'EOF'
 Usage:
-  ./run_triarchy.sh --demo [NEXTFLOW_OPTIONS]
-  ./run_triarchy.sh --lite [NEXTFLOW_OPTIONS]
-  ./run_triarchy.sh --stub [NEXTFLOW_OPTIONS]
-  ./run_triarchy.sh [NEXTFLOW_OPTIONS] --samples FILE --controls FILE
+  ./run_triarchy.sh --samples FILE --controls FILE [NEXTFLOW_OPTIONS]
 
-Wrapper for `nextflow run main.nf`.
+Run the TRIARCHY production workflow on real sequencing data. All unrecognized
+options are passed directly to Nextflow.
 
-Wrapper options:
-  --demo             Run the TRI-31 showcase deterministic workflow
-  --lite             Run the lightweight laptop-friendly deterministic workflow
-  --stub             Run the complete deterministic TRI-00 stub workflow
-  -h, --help         Show this help
-  --                 Pass all following arguments directly to Nextflow
+Required:
+  --samples FILE       Production sample manifest
+  --controls FILE      Production control-relationship table
 
-Examples:
-  ./run_triarchy.sh --demo
-  ./run_triarchy.sh --lite
-  ./run_triarchy.sh --stub
-  ./run_triarchy.sh --stub -resume --outdir results/stub
-  ./run_triarchy.sh -profile local \
-    --samples /data/study/samples.tsv \
-    --controls /data/study/control_relationships.tsv \
-    --host_index /refs/host/grch38 \
-    --kraken2_db /refs/kraken2 \
-    --s16_taxonomy /refs/silva/train.fa.gz \
-    --its_taxonomy /refs/unite/train.fa.gz \
-    --outdir results/study
+Recommended:
+  -profile laptop      Constrained production profile for a laptop
+  -profile local       Default local production resources
+  --outdir DIR         Production output directory
+  -resume              Resume a previous production run
 
 Environment:
   TRIARCHY_SAMPLES     Default production sample manifest
   TRIARCHY_CONTROLS    Default production control-relationship table
-  TRIARCHY_OUTDIR      Default output directory
+  TRIARCHY_OUTDIR      Default production output directory
   NXF_HOME             Nextflow cache (default: PROJECT/.nextflow)
   NXF_VER              Nextflow version (default: .nextflow-version)
-
-All unrecognized options are passed directly to Nextflow. The --lite and
---demo modes are aliases for stub workflows with laptop-friendly resource
-profiles and default output directories.
 EOF
 }
 
@@ -54,27 +37,23 @@ die() {
     exit 1
 }
 
-stub_run=false
-lite_run=false
-demo_run=false
-forwarded=()
+activate_triarchy_environment() {
+    command -v mamba >/dev/null 2>&1 ||
+        die "Mamba is required; install Mamba and create the TRIARCHY environment"
+    if [[ "${CONDA_DEFAULT_ENV:-}" != "TRIARCHY" ]]; then
+        eval "$(mamba shell hook --shell bash)"
+        set +u
+        if ! mamba activate TRIARCHY; then
+            set -u
+            die "Mamba environment TRIARCHY is unavailable; create it with: mamba env create --file environment.yml"
+        fi
+        set -u
+    fi
+}
 
+forwarded=()
 while (($#)); do
     case "$1" in
-        --demo)
-            demo_run=true
-            stub_run=true
-            shift
-            ;;
-        --lite)
-            lite_run=true
-            stub_run=true
-            shift
-            ;;
-        --stub)
-            stub_run=true
-            shift
-            ;;
         -h|--help)
             usage
             exit 0
@@ -91,28 +70,6 @@ while (($#)); do
     esac
 done
 
-[[ -f "${VERSION_FILE}" ]] || die "missing ${VERSION_FILE}; run ./install.sh"
-
-export PATH="${PROJECT_DIR}/.tools/bin:${PATH}"
-if [[ -d "${PROJECT_DIR}/.tools/env/bin" ]]; then
-    export PATH="${PROJECT_DIR}/.tools/env/bin:${PATH}"
-fi
-if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]] &&
-    command -v brew >/dev/null 2>&1; then
-    export PATH="$(brew --prefix)/bin:${PATH}"
-fi
-export NXF_HOME="${NXF_HOME:-${PROJECT_DIR}/.nextflow}"
-export NXF_VER="${NXF_VER:-$(tr -d '[:space:]' <"${VERSION_FILE}")}"
-
-if [[ ! -x "${LOCAL_NEXTFLOW}" ]] && ! command -v nextflow >/dev/null 2>&1; then
-    die "Nextflow is not installed; run ./install.sh first"
-fi
-
-nextflow_bin="${LOCAL_NEXTFLOW}"
-if [[ ! -x "${nextflow_bin}" ]]; then
-    nextflow_bin="$(command -v nextflow)"
-fi
-
 has_option() {
     local wanted="$1"
     local argument
@@ -122,60 +79,38 @@ has_option() {
     return 1
 }
 
-if [[ "${stub_run}" == true ]]; then
-    if [[ "${demo_run}" == true ]] && ! has_option -profile; then
-        forwarded=(-profile demo "${forwarded[@]}")
-    elif [[ "${lite_run}" == true ]] && ! has_option -profile; then
-        forwarded=(-profile lite "${forwarded[@]}")
-    fi
-    default_outdir="${PROJECT_DIR}/results/stub"
-    default_samples="${PROJECT_DIR}/benchmarks/TRI-00/valid/samples.tsv"
-    default_controls="${PROJECT_DIR}/benchmarks/TRI-00/valid/control_relationships.tsv"
-    if [[ "${demo_run}" == true ]]; then
-        default_outdir="${PROJECT_DIR}/results/showcase_30min"
-        default_samples="${PROJECT_DIR}/benchmarks/TRI-31/metadata/samples.tsv"
-        default_controls="${PROJECT_DIR}/benchmarks/TRI-31/metadata/control_relationships.tsv"
-    elif [[ "${lite_run}" == true ]]; then
-        default_outdir="${PROJECT_DIR}/results/lite"
-    fi
-    has_option --samples ||
-        forwarded+=(--samples "${default_samples}")
-    has_option --controls ||
-        forwarded+=(--controls "${default_controls}")
-    has_option --outdir ||
-        forwarded+=(--outdir "${TRIARCHY_OUTDIR:-${default_outdir}}")
-    forwarded=(-stub-run "${forwarded[@]}")
-else
-    reference_config="${PROJECT_DIR}/conf/references.config"
-    if [[ -f "${reference_config}" ]] && ! has_option -c; then
-        forwarded=(-c "${reference_config}" "${forwarded[@]}")
-    fi
-    if ! has_option --samples && [[ -n "${TRIARCHY_SAMPLES:-}" ]]; then
-        forwarded+=(--samples "${TRIARCHY_SAMPLES}")
-    fi
-    if ! has_option --controls && [[ -n "${TRIARCHY_CONTROLS:-}" ]]; then
-        forwarded+=(--controls "${TRIARCHY_CONTROLS}")
-    fi
-    if ! has_option --outdir && [[ -n "${TRIARCHY_OUTDIR:-}" ]]; then
-        forwarded+=(--outdir "${TRIARCHY_OUTDIR}")
-    fi
-    has_option --samples ||
-        die "production mode requires --samples FILE or TRIARCHY_SAMPLES"
-    has_option --controls ||
-        die "production mode requires --controls FILE or TRIARCHY_CONTROLS"
+[[ -f "${VERSION_FILE}" ]] || die "missing ${VERSION_FILE}; run ./install.sh"
+activate_triarchy_environment
+
+export PATH="${PROJECT_DIR}/.tools/bin:${PATH}"
+if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]] &&
+    command -v brew >/dev/null 2>&1; then
+    export PATH="$(brew --prefix)/bin:${PATH}"
+fi
+export NXF_HOME="${NXF_HOME:-${PROJECT_DIR}/.nextflow}"
+export NXF_VER="${NXF_VER:-$(tr -d '[:space:]' <"${VERSION_FILE}")}"
+
+nextflow_bin="${LOCAL_NEXTFLOW}"
+if [[ ! -x "${nextflow_bin}" ]]; then
+    command -v nextflow >/dev/null 2>&1 || die "Nextflow is not installed; run ./install.sh first"
+    nextflow_bin="$(command -v nextflow)"
 fi
 
-printf 'TRIARCHY: Nextflow %s\n' "${NXF_VER}"
-printf 'TRIARCHY: output mode: %s\n' "$(
-    if [[ "${demo_run}" == true ]]; then
-        printf demo
-    elif [[ "${lite_run}" == true ]]; then
-        printf lite
-    elif [[ "${stub_run}" == true ]]; then
-        printf stub
-    else
-        printf production
-    fi
-)"
+reference_config="${PROJECT_DIR}/conf/references.config"
+if [[ -f "${reference_config}" ]] && ! has_option -c; then
+    forwarded=(-c "${reference_config}" ${forwarded[@]+"${forwarded[@]}"})
+fi
+if ! has_option --samples && [[ -n "${TRIARCHY_SAMPLES:-}" ]]; then
+    forwarded+=(--samples "${TRIARCHY_SAMPLES}")
+fi
+if ! has_option --controls && [[ -n "${TRIARCHY_CONTROLS:-}" ]]; then
+    forwarded+=(--controls "${TRIARCHY_CONTROLS}")
+fi
+if ! has_option --outdir && [[ -n "${TRIARCHY_OUTDIR:-}" ]]; then
+    forwarded+=(--outdir "${TRIARCHY_OUTDIR}")
+fi
+has_option --samples || die "production run requires --samples FILE or TRIARCHY_SAMPLES"
+has_option --controls || die "production run requires --controls FILE or TRIARCHY_CONTROLS"
 
-exec "${nextflow_bin}" run "${PROJECT_DIR}/main.nf" "${forwarded[@]}"
+printf 'TRIARCHY: production run with Nextflow %s\n' "${NXF_VER}"
+exec "${nextflow_bin}" run "${PROJECT_DIR}/main.nf" ${forwarded[@]+"${forwarded[@]}"}

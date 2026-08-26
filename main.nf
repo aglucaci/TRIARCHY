@@ -1,7 +1,7 @@
 nextflow.enable.dsl = 2
 
 include { VALIDATE_METADATA; SPLIT_MANIFESTS } from './modules/local/metadata'
-include { WMS_QC; WMS_HOST_REMOVAL; WMS_TAXONOMY; WMS_FUNCTIONS } from './modules/local/wms'
+include { WGS_QC; WGS_HOST_REMOVAL; WGS_TAXONOMY; WGS_FUNCTIONS } from './modules/local/wms'
 include { AMPLICON_QC as S16_QC; DADA2_PROFILE as S16_DADA2 } from './modules/local/amplicon'
 include { AMPLICON_QC as ITS_QC; ITSXPRESS; DADA2_PROFILE as ITS_DADA2 } from './modules/local/amplicon'
 include {
@@ -76,10 +76,10 @@ workflow {
             )
         }
 
-    WMS_QC(wms_rows)
-    WMS_HOST_REMOVAL(WMS_QC.out.reads)
-    WMS_TAXONOMY(WMS_HOST_REMOVAL.out.reads)
-    WMS_FUNCTIONS(WMS_HOST_REMOVAL.out.reads)
+    WGS_QC(wms_rows)
+    WGS_HOST_REMOVAL(WGS_QC.out.reads)
+    WGS_TAXONOMY(WGS_HOST_REMOVAL.out.reads)
+    WGS_FUNCTIONS(WGS_HOST_REMOVAL.out.reads)
 
     S16_QC(s16_rows, '16S')
     S16_DADA2(S16_QC.out.reads, s16_taxonomy)
@@ -88,19 +88,19 @@ workflow {
     ITSXPRESS(ITS_QC.out.reads)
     ITS_DADA2(ITSXPRESS.out.reads, its_taxonomy)
 
-    qc_files = WMS_QC.out.metrics
-        .mix(WMS_HOST_REMOVAL.out.metrics)
+    qc_files = WGS_QC.out.metrics
+        .mix(WGS_HOST_REMOVAL.out.metrics)
         .mix(S16_QC.out.metrics)
         .mix(ITS_QC.out.metrics)
         .map { library_id, metric -> metric }
         .collect()
     QC_SUMMARY(samples, qc_files)
 
-    taxonomic_profiles = WMS_TAXONOMY.out.native_files
+    taxonomic_profiles = WGS_TAXONOMY.out.native_files
         .mix(S16_DADA2.out.native_files)
         .mix(ITS_DADA2.out.native_files)
         .collect()
-    function_profiles = WMS_FUNCTIONS.out.native_files.collect()
+    function_profiles = WGS_FUNCTIONS.out.native_files.collect()
 
     CONTROL_ANNOTATION(
         samples,
@@ -138,6 +138,10 @@ workflow {
         ASSAY_DIVERSITY.out.alpha,
         ASSAY_DIVERSITY.out.beta,
         CONTROL_ANNOTATION.out.sample_confidence,
+        QC_SUMMARY.out.metrics,
+        samples,
+        controls,
+        CONTROL_ANNOTATION.out.annotated_functions,
         EVIDENCE_CLASSIFICATION.out.model,
         RUN_PROVENANCE.out.provenance
     )

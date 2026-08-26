@@ -1,2 +1,0 @@
-library_id	control_library_id	control_stage	relationship	priority	reason
-BIO_A_WMS	DOES_NOT_EXIST	extraction	paired	1	invalid unknown control

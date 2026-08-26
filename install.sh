@@ -6,10 +6,10 @@ readonly VERSION_FILE="${SCRIPT_DIR}/.nextflow-version"
 readonly DATABASE_DIR_FILE="${SCRIPT_DIR}/references/.database-dir"
 
 PREFIX="${SCRIPT_DIR}/.tools/bin"
-ENV_PREFIX="${SCRIPT_DIR}/.tools/env"
+readonly ENV_NAME="TRIARCHY"
+ENV_PREFIX=""
 DATABASE_DIR="${SCRIPT_DIR}/references/data"
 DATABASE_DIR_EXPLICIT=false
-DATABASE_PROFILE="standard"
 KRAKEN_ARCHIVE=""
 INSTALL_CPUS=4
 ENVIRONMENT_MANAGER="${TRIARCHY_ENV_MANAGER:-mamba}"
@@ -17,7 +17,6 @@ SKIP_NEXTFLOW=false
 SKIP_DEPENDENCIES=false
 LOCKED_DEPENDENCIES=false
 SKIP_DATABASES=false
-SKIP_TESTS=false
 ASSUME_YES=false
 SETUP_STARTED="${SECONDS}"
 
@@ -43,20 +42,17 @@ Set up a complete local TRIARCHY environment.
 
 Options:
   --prefix DIR          Install Nextflow in DIR (default: .tools/bin)
-  --env-prefix DIR      Install bioinformatics tools in DIR (default: .tools/env)
   --environment-manager CMD
                         mamba, micromamba, conda, or auto (default: mamba)
   --database-dir DIR    Reference destination (default: last successful location,
                         otherwise references/data)
-  --database-profile P  standard or minimal (default: standard)
   --kraken-archive FILE Use an existing PlusPFP .tar.gz instead of downloading
-  --cpus N              Indexing threads for databases built locally (default: 4)
+  --cpus N              Threads for the locally built host index (default: 4)
   --skip-nextflow       Do not download or validate Nextflow
-  --skip-dependencies   Do not create/update the Conda environment
+  --skip-dependencies   Do not create/update the Mamba environment
   --locked-dependencies Install dependencies from environment.lock.txt instead
                         of solving environment.yml
   --skip-databases      Do not download or build references
-  --skip-tests          Do not run validation and unit tests
   --yes                 Accept the large standard database installation
   -h, --help            Show this help
 
@@ -67,11 +63,8 @@ Environment:
                      Override the environment manager (default: mamba)
   NO_COLOR           Disable ANSI colors
 
-The standard profile downloads the prebuilt June 2026 Kraken2 PlusPFP database
-with matching Bracken distributions. The complete reference set can exceed
-400 GB and take many hours to download and extract. Downloads are resumable.
-Use --database-profile minimal for an installation check; it is not suitable
-for production analysis.
+The complete production reference set can exceed 400 GB. Downloads are
+resumable and validated before the generated configuration is activated.
 EOF
 }
 
@@ -105,11 +98,6 @@ while (($#)); do
             PREFIX="$2"
             shift 2
             ;;
-        --env-prefix)
-            (($# >= 2)) || die "--env-prefix requires a directory"
-            ENV_PREFIX="$2"
-            shift 2
-            ;;
         --environment-manager)
             (($# >= 2)) || die "--environment-manager requires a command"
             ENVIRONMENT_MANAGER="$2"
@@ -119,11 +107,6 @@ while (($#)); do
             (($# >= 2)) || die "--database-dir requires a directory"
             DATABASE_DIR="$2"
             DATABASE_DIR_EXPLICIT=true
-            shift 2
-            ;;
-        --database-profile)
-            (($# >= 2)) || die "--database-profile requires standard or minimal"
-            DATABASE_PROFILE="$2"
             shift 2
             ;;
         --kraken-archive)
@@ -150,10 +133,6 @@ while (($#)); do
             ;;
         --skip-databases)
             SKIP_DATABASES=true
-            shift
-            ;;
-        --skip-tests)
-            SKIP_TESTS=true
             shift
             ;;
         --yes)
@@ -186,15 +165,13 @@ if [[ "${DATABASE_DIR_EXPLICIT}" == false ]]; then
     fi
 fi
 
-if [[ "${DATABASE_DIR}" == /Volumes/* ]]; then
+if [[ "${SKIP_DATABASES}" == false && "${DATABASE_DIR}" == /Volumes/* ]]; then
     database_volume="${DATABASE_DIR#/Volumes/}"
     database_volume="${database_volume%%/*}"
     [[ -d "/Volumes/${database_volume}" ]] ||
         die "reference volume /Volumes/${database_volume} is not mounted"
 fi
 
-[[ "${DATABASE_PROFILE}" == "minimal" || "${DATABASE_PROFILE}" == "standard" ]] ||
-    die "--database-profile must be standard or minimal"
 [[ "${INSTALL_CPUS}" =~ ^[1-9][0-9]*$ ]] || die "--cpus must be a positive integer"
 case "${ENVIRONMENT_MANAGER}" in
     mamba|micromamba|conda|auto) ;;
@@ -219,10 +196,8 @@ fi
 info "Java ${java_version}"
 
 mkdir -p \
-    "${SCRIPT_DIR}/assets" \
     "${SCRIPT_DIR}/conf" \
     "${SCRIPT_DIR}/modules" \
-    "${SCRIPT_DIR}/subworkflows" \
     "${SCRIPT_DIR}/results" \
     "${PREFIX}"
 
@@ -280,101 +255,54 @@ if [[ "${SKIP_NEXTFLOW}" == false ]]; then
     fi
 fi
 
-if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
-    environment_file="${SCRIPT_DIR}/environment.yml"
-    [[ -f "${environment_file}" ]] || die "missing ${environment_file}"
-    environment_lock="${SCRIPT_DIR}/environment.lock.txt"
-
-    if [[ "${ENVIRONMENT_MANAGER}" == "auto" ]]; then
-        if command -v mamba >/dev/null 2>&1; then
-            environment_manager="mamba"
-        elif command -v micromamba >/dev/null 2>&1; then
-            environment_manager="micromamba"
-        elif command -v conda >/dev/null 2>&1; then
-            environment_manager="conda"
-        else
-            die "Mamba, Micromamba, or Conda is required to install bioinformatics dependencies"
-        fi
+if [[ "${ENVIRONMENT_MANAGER}" == "auto" ]]; then
+    if command -v mamba >/dev/null 2>&1; then
+        environment_manager="mamba"
+    elif command -v micromamba >/dev/null 2>&1; then
+        environment_manager="micromamba"
+    elif command -v conda >/dev/null 2>&1; then
+        environment_manager="conda"
     else
-        environment_manager="${ENVIRONMENT_MANAGER}"
-        command -v "${environment_manager}" >/dev/null 2>&1 ||
-            die "${environment_manager} is required; install it or use --environment-manager auto"
+        die "Mamba, Micromamba, or Conda is required"
     fi
+else
+    environment_manager="${ENVIRONMENT_MANAGER}"
+    command -v "${environment_manager}" >/dev/null 2>&1 ||
+        die "${environment_manager} is required; install it or use --environment-manager auto"
+fi
 
-    info "Using ${environment_manager} for the bioinformatics environment"
+environment_file="${SCRIPT_DIR}/environment.yml"
+environment_lock="${SCRIPT_DIR}/environment.lock.txt"
+if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
+    info "Installing the named ${ENV_NAME} production environment with ${environment_manager}"
     if [[ "${LOCKED_DEPENDENCIES}" == true ]]; then
         [[ -f "${environment_lock}" ]] ||
-            die "missing ${environment_lock}; run without --locked-dependencies to solve environment.yml"
-        if [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
-            info "Installing pinned dependency set into ${ENV_PREFIX}"
-            if [[ "${ASSUME_YES}" == true ]]; then
-                "${environment_manager}" install \
-                    --prefix "${ENV_PREFIX}" \
-                    --file "${environment_lock}" \
-                    --yes
-            else
-                "${environment_manager}" install \
-                    --prefix "${ENV_PREFIX}" \
-                    --file "${environment_lock}"
-            fi
-        else
-            info "Creating pinned bioinformatics environment at ${ENV_PREFIX}"
-            if [[ "${ASSUME_YES}" == true ]]; then
-                "${environment_manager}" create \
-                    --prefix "${ENV_PREFIX}" \
-                    --file "${environment_lock}" \
-                    --yes
-            else
-                "${environment_manager}" create \
-                    --prefix "${ENV_PREFIX}" \
-                    --file "${environment_lock}"
-            fi
-        fi
-    elif [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
-        info "Updating bioinformatics environment at ${ENV_PREFIX}"
-        if [[ "${ASSUME_YES}" == true ]]; then
-            "${environment_manager}" env update \
-                --prefix "${ENV_PREFIX}" \
-                --file "${environment_file}" \
-                --prune \
-                --yes
-        else
-            "${environment_manager}" env update \
-                --prefix "${ENV_PREFIX}" \
-                --file "${environment_file}" \
-                --prune
-        fi
+            die "missing ${environment_lock}; run without --locked-dependencies first"
+        dependency_args=(install --name "${ENV_NAME}" --file "${environment_lock}")
     else
-        info "Creating bioinformatics environment at ${ENV_PREFIX}"
-        if [[ "${ASSUME_YES}" == true ]]; then
-            "${environment_manager}" env create \
-                --prefix "${ENV_PREFIX}" \
-                --file "${environment_file}" \
-                --yes
-        else
-            "${environment_manager}" env create \
-                --prefix "${ENV_PREFIX}" \
-                --file "${environment_file}"
-        fi
+        [[ -f "${environment_file}" ]] || die "missing ${environment_file}"
+        dependency_args=(env update --name "${ENV_NAME}" --file "${environment_file}" --prune)
     fi
-    "${environment_manager}" list --prefix "${ENV_PREFIX}" --explicit \
-        >"${SCRIPT_DIR}/environment.lock.txt"
+    [[ "${ASSUME_YES}" == true ]] && dependency_args+=(--yes)
+    "${environment_manager}" "${dependency_args[@]}"
 fi
+
+ENV_PREFIX="$(
+    "${environment_manager}" env list --json |
+        python3 -c 'import json,sys; envs=json.load(sys.stdin)["envs"]; matches=[p for p in envs if p.rstrip("/").endswith("/TRIARCHY")]; print(matches[0] if matches else "")'
+)"
+[[ -x "${ENV_PREFIX}/bin/python3" ]] ||
+    die "named environment ${ENV_NAME} is missing; run: mamba env create --file environment.yml"
+"${environment_manager}" list --name "${ENV_NAME}" --explicit >"${environment_lock}"
 
 if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
     native_args=(--env-prefix "${ENV_PREFIX}")
     if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
         native_args+=(--install)
     fi
-    info "Configuring native Apple-silicon Bowtie2, Kraken2, and Bracken"
+    info "Configuring native Apple-silicon Bowtie2, Kraken2, Bracken, and DIAMOND"
     "${SCRIPT_DIR}/scripts/configure_conda_native_tools.sh" \
         "${native_args[@]}"
-fi
-
-if [[ -x "${ENV_PREFIX}/bin/python3" ]]; then
-    PYTHON_BIN="${ENV_PREFIX}/bin/python3"
-else
-    PYTHON_BIN="$(command -v python3)"
 fi
 
 if [[ "${SKIP_DATABASES}" == false ]]; then
@@ -382,7 +310,6 @@ if [[ "${SKIP_DATABASES}" == false ]]; then
         --database-dir "${DATABASE_DIR}"
         --env-prefix "${ENV_PREFIX}"
         --cpus "${INSTALL_CPUS}"
-        --profile "${DATABASE_PROFILE}"
     )
     if [[ "${ASSUME_YES}" == true ]]; then
         database_args+=(--yes)
@@ -393,19 +320,6 @@ if [[ "${SKIP_DATABASES}" == false ]]; then
     "${SCRIPT_DIR}/scripts/install_databases.sh" "${database_args[@]}"
     mkdir -p "${SCRIPT_DIR}/references"
     printf '%s\n' "${DATABASE_DIR}" >"${DATABASE_DIR_FILE}"
-fi
-
-if [[ "${SKIP_TESTS}" == false ]]; then
-    info "Validating TRI-00 metadata"
-    "${PYTHON_BIN}" "${SCRIPT_DIR}/scripts/validate_benchmark_metadata.py" \
-        "${SCRIPT_DIR}/benchmarks/TRI-00/valid/samples.tsv" \
-        "${SCRIPT_DIR}/benchmarks/TRI-00/valid/control_relationships.tsv"
-
-    info "Running repository tests"
-    (
-        cd -- "${SCRIPT_DIR}"
-        "${PYTHON_BIN}" -m unittest discover -s tests -p 'test_*.py'
-    )
 fi
 
 if [[ -f "${SCRIPT_DIR}/main.nf" && -f "${SCRIPT_DIR}/nextflow.config" ]]; then
@@ -420,7 +334,7 @@ success "TRIARCHY setup complete in $(format_duration $((SECONDS - SETUP_STARTED
 cat <<EOF
 
 Add the local Nextflow installation to this shell:
-  conda activate "${ENV_PREFIX}"
+  mamba activate "${ENV_NAME}"
   export PATH="${PREFIX}:\$PATH"
   export NXF_HOME="${NXF_HOME:-${SCRIPT_DIR}/.nextflow}"
   export NXF_VER="${nextflow_version:-$(tr -d '[:space:]' <"${VERSION_FILE}")}"

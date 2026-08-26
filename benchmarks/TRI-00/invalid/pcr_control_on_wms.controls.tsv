@@ -1,2 +1,0 @@
-library_id	control_library_id	control_stage	relationship	priority	reason
-BIO_A_WMS	SEQ_NEG_WMS	pcr	run_level	1	invalid PCR edge for WMS

@@ -128,61 +128,6 @@ def cmd_split(args: argparse.Namespace) -> None:
         write_tsv(args.outdir / filename, by_assay[assay], fields)
 
 
-def cmd_mock_profile(args: argparse.Namespace) -> None:
-    library_token = args.library_id.upper()
-    control = (
-        any(token in library_token for token in ("NEG", "BLANK", "NTC"))
-        or library_token.startswith("EB")
-        or "_EB" in library_token
-    )
-    if control:
-        taxa = [("CTRL001", "Ralstonia", "genus", 80.0)]
-    elif args.assay == "WMS":
-        taxa = [
-            ("WMS001", "Pseudomonas", "genus", 60.0),
-            ("WMS002", "Aspergillus", "genus", 20.0),
-        ]
-    elif args.assay == "16S":
-        taxa = [
-            ("16S001", "Pseudomonas", "genus", 65.0),
-            ("16S002", "Bacillus", "genus", 35.0),
-        ]
-    else:
-        taxa = [
-            ("ITS001", "Aspergillus", "genus", 70.0),
-            ("ITS002", "Cladosporium", "genus", 30.0),
-        ]
-    rows = [
-        dict(
-            library_id=args.library_id,
-            assay=args.assay,
-            feature_id=feature_id,
-            original_name=name,
-            original_rank=rank,
-            abundance=abundance,
-        )
-        for feature_id, name, rank, abundance in taxa
-    ]
-    write_tsv(args.output, rows, PROFILE_FIELDS)
-
-
-def cmd_mock_functions(args: argparse.Namespace) -> None:
-    rows = [
-        {
-            "library_id": args.library_id,
-            "assay": "WMS_function",
-            "feature_id": "PWY-0001",
-            "original_name": "mock_pathway",
-            "abundance": 1.0,
-        }
-    ]
-    write_tsv(
-        args.output,
-        rows,
-        ["library_id", "assay", "feature_id", "original_name", "abundance"],
-    )
-
-
 def cmd_bracken(args: argparse.Namespace) -> None:
     rows = []
     for row in read_tsv(args.input):
@@ -865,55 +810,91 @@ def cmd_provenance(args: argparse.Namespace) -> None:
         "samples_sha256": checksum(args.samples),
         "controls_sha256": checksum(args.controls),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "stub_run": os.environ.get("NXF_STUB", "").lower() == "true",
+        "run_mode": "production",
     }
     args.output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
-
-
-def table_html(path: Path) -> str:
-    rows = read_tsv(path)
-    if not rows:
-        return "<p>No rows.</p>"
-    fields = list(rows[0])
-    head = "".join(f"<th>{html.escape(field)}</th>" for field in fields)
-    body = "".join(
-        "<tr>" + "".join(f"<td>{html.escape(str(row.get(field, '')))}</td>" for field in fields) + "</tr>"
-        for row in rows
-    )
-    return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
 
 
 def cmd_report(args: argparse.Namespace) -> None:
     provenance = json.loads(args.provenance.read_text(encoding="utf-8"))
     evidence_model = json.loads(args.evidence_model.read_text(encoding="utf-8"))
-    calibration_status = evidence_model["policy"].get("calibration", {}).get(
-        "status", "uncalibrated"
-    )
-    document = f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<title>TRIARCHY analytical report</title>
-<style>
-body{{font-family:system-ui,sans-serif;max-width:1200px;margin:2rem auto;padding:0 1rem;color:#17212b}}
-table{{border-collapse:collapse;width:100%;font-size:.85rem;margin:1rem 0 2rem}}
-th,td{{border:1px solid #d9dfe7;padding:.4rem;text-align:left}}th{{background:#eef5f3}}
-code,pre{{background:#f4f6f8;padding:.2rem .35rem}}.warning{{border-left:4px solid #d88900;padding:.7rem}}
-</style></head><body>
-<h1>TRIARCHY analytical report</h1>
-<p class="warning">Cross-assay classifications summarize evidence; they do not make
-raw relative abundances interchangeable.</p>
-<p class="warning">Authenticity probability calibration status:
-<strong>{html.escape(calibration_status)}</strong>. Synthetic calibration must
-not be represented as empirical clinical or environmental validation.</p>
-<h2>Evidence model</h2><pre>{html.escape(json.dumps(evidence_model, indent=2))}</pre>
-<h2>Run provenance</h2><pre>{html.escape(json.dumps(provenance, indent=2))}</pre>
-<h2>Which samples are trustworthy?</h2>{table_html(args.sample_confidence)}
-<h2>Which taxa are supported?</h2>{table_html(args.evidence)}
-<h2>Where do assays agree?</h2>{table_html(args.concordance)}
-<h2>Within-assay alpha diversity</h2>{table_html(args.alpha_diversity)}
-<h2>Within-assay beta diversity</h2>{table_html(args.beta_diversity)}
-</body></html>
-"""
+    payload = {
+        "evidence": read_tsv(args.evidence),
+        "concordance": read_tsv(args.concordance),
+        "alpha": read_tsv(args.alpha_diversity),
+        "beta": read_tsv(args.beta_diversity),
+        "confidence": read_tsv(args.sample_confidence),
+        "qc": read_tsv(args.qc_metrics),
+        "samples": read_tsv(args.samples),
+        "controls": read_tsv(args.controls),
+        "functions": read_tsv(args.functions),
+        "model": evidence_model,
+        "provenance": provenance,
+    }
+    serialized = json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
+    document = DASHBOARD_TEMPLATE.replace("__TRIARCHY_DATA__", serialized)
     args.output.write_text(document, encoding="utf-8")
+
+
+DASHBOARD_TEMPLATE = r'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRIARCHY · Scientific evidence dashboard</title>
+<style>
+:root{--navy:#082b58;--blue:#125a91;--teal:#078c97;--green:#58a62a;--ink:#17212b;--muted:#607080;--line:#dce5ea;--wash:#f5f8fa;--warn:#a65b00;--bad:#b42318;--good:#16794b;--white:#fff;--shadow:0 8px 24px rgba(8,43,88,.08)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--wash)}button,input,select{font:inherit}button{cursor:pointer}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:#fff;padding:.7rem;z-index:20}.app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100vh}.sidebar{position:sticky;top:0;height:100vh;background:linear-gradient(165deg,#06244a,#073667 60%,#07516a);color:#fff;padding:1.35rem 1rem;overflow:auto}.brand{display:flex;align-items:center;gap:.75rem;padding:.3rem .55rem 1.2rem}.mark{width:42px;height:42px;border:2px solid #72d2c7;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#b9ef85}.brand strong{font-size:1.18rem;letter-spacing:.14em}.brand small{display:block;opacity:.7;letter-spacing:0}
+.nav-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.13em;opacity:.6;margin:1rem .6rem .45rem}.nav button{width:100%;border:0;background:transparent;color:#d7e7f3;border-radius:10px;padding:.72rem .75rem;margin:.12rem 0;text-align:left;display:grid;grid-template-columns:26px 1fr;gap:.35rem;align-items:start}.nav button:hover,.nav button.active{background:rgba(255,255,255,.13);color:#fff}.nav b{font-size:.9rem}.nav small{display:block;font-size:.7rem;opacity:.66;margin-top:.1rem}.side-foot{margin:1.4rem .55rem;font-size:.72rem;color:#b7cad8}.main{min-width:0}.topbar{height:66px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1rem,3vw,2.5rem);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}.breadcrumb{font-weight:650;color:var(--navy)}.top-actions{display:flex;gap:.6rem}.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:.55rem .8rem;color:var(--navy);font-weight:650}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.content{padding:clamp(1.2rem,3vw,2.7rem);max-width:1500px;margin:auto}.page{display:none}.page.active{display:block}.eyebrow{text-transform:uppercase;letter-spacing:.12em;color:var(--teal);font-size:.74rem;font-weight:800}.hero{display:flex;justify-content:space-between;gap:2rem;align-items:end;margin-bottom:1.5rem}.hero h1{font-size:clamp(1.9rem,4vw,3.25rem);line-height:1.08;letter-spacing:-.035em;margin:.3rem 0;color:var(--navy)}.hero p{max-width:760px;color:var(--muted);font-size:1.04rem;margin:.4rem 0}.status{padding:.45rem .7rem;border-radius:99px;background:#e8f6ee;color:var(--good);font-weight:750;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:1rem;margin:1.2rem 0}.kpi,.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.kpi{padding:1rem 1.1rem;border-top:3px solid var(--teal)}.kpi .value{font-size:1.9rem;line-height:1.1;font-weight:780;color:var(--navy)}.kpi .label{font-size:.78rem;color:var(--muted);margin-top:.3rem}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;margin:1rem 0}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-12{grid-column:span 12}.card{padding:1.15rem;min-width:0}.card h2,.card h3{color:var(--navy);margin:0 0 .35rem}.card h2{font-size:1.12rem}.card h3{font-size:.98rem}.sub{color:var(--muted);font-size:.82rem;margin:0 0 1rem}.attention{border-left:4px solid #ef9f27}.attention ul{padding-left:1.2rem;margin:.7rem 0}.attention li{margin:.35rem 0}.callout{padding:.9rem 1rem;background:#eef6f7;border-left:4px solid var(--teal);border-radius:5px;margin:1rem 0}.callout.warn{background:#fff7e8;border-color:#e29219}.question{font-size:1.08rem;color:var(--navy);font-weight:680;margin-bottom:1rem}.chart{min-height:210px;display:flex;flex-direction:column;justify-content:center}.bars{display:grid;gap:.55rem}.bar-row{display:grid;grid-template-columns:minmax(100px,160px) 1fr 42px;gap:.6rem;align-items:center;font-size:.8rem}.track{height:12px;background:#e7eef2;border-radius:9px;overflow:hidden}.fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--teal),var(--green))}.legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.76rem;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:.3rem}.matrix{overflow:auto}.matrix table{min-width:680px}.matrix td.center,.matrix th.center{text-align:center}.pill{display:inline-flex;padding:.2rem .48rem;border-radius:99px;background:#eef2f5;color:#405363;font-size:.72rem;font-weight:700}.pill.good{background:#e5f4ec;color:var(--good)}.pill.warn{background:#fff0d8;color:#925400}.pill.bad{background:#fee9e7;color:var(--bad)}.pill.info{background:#e6f3f6;color:#076d78}
+.tools{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.8rem 0}.search,.select{border:1px solid #cdd9df;border-radius:9px;padding:.55rem .7rem;background:#fff;min-width:190px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px;max-height:520px}table{border-collapse:separate;border-spacing:0;width:100%;font-size:.78rem;background:#fff}th,td{padding:.62rem .7rem;text-align:left;border-bottom:1px solid #e8eef1;white-space:nowrap}th{position:sticky;top:0;background:#edf4f5;color:#21445d;z-index:1;font-size:.7rem;text-transform:uppercase;letter-spacing:.035em}tbody tr:hover{background:#f3f9f8}.empty{text-align:center;padding:3rem 1rem;color:var(--muted)}.empty strong{display:block;color:var(--navy);font-size:1rem;margin-bottom:.25rem}.detail{background:linear-gradient(135deg,#f0f8f8,#f6f8fb);border:1px solid #d7e8e8;border-radius:12px;padding:1rem}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}.metric{background:#fff;border-radius:9px;padding:.75rem;border:1px solid var(--line)}.metric b{display:block;color:var(--navy);font-size:1.1rem}.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1rem 0}.step{position:relative;background:#fff;border:1px solid var(--line);padding:.8rem;border-radius:10px;text-align:center;color:var(--navy);font-weight:700;font-size:.8rem}.step:not(:last-child):after{content:'›';position:absolute;right:-.48rem;color:var(--teal);z-index:2}.provenance{white-space:pre-wrap;word-break:break-word;background:#102b43;color:#d7ecf3;border-radius:10px;padding:1rem;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.mobile-menu{display:none}
+@media(max-width:980px){.app{grid-template-columns:1fr}.sidebar{position:fixed;z-index:30;left:-285px;width:270px;transition:.2s}.sidebar.open{left:0}.mobile-menu{display:inline-block}.kpis{grid-template-columns:repeat(2,1fr)}.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}.steps{grid-template-columns:1fr 1fr}.hero{align-items:start;flex-direction:column;gap:.5rem}}@media(max-width:540px){.kpis{grid-template-columns:1fr 1fr}.top-actions .btn:not(.primary){display:none}.detail-grid{grid-template-columns:1fr}.content{padding:1rem}}
+@media print{.sidebar,.topbar,.tools{display:none}.app{display:block}.page{display:block;break-before:page}.content{max-width:none}.card,.kpi{box-shadow:none}}
+</style></head><body><a class="skip" href="#content">Skip to dashboard</a>
+<div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="mark">△</div><div><strong>TRIARCHY</strong><small>Scientific evidence dashboard</small></div></div><div class="nav-label">Scientific journey</div><nav class="nav" id="nav">
+<button class="active" data-page="overview"><span>01</span><span><b>Study overview</b><small>Did the experiment work?</small></span></button>
+<button data-page="qc"><span>02</span><span><b>Sequencing QC</b><small>Which libraries are trustworthy?</small></span></button>
+<button data-page="controls"><span>03</span><span><b>Controls</b><small>Is this contamination?</small></span></button>
+<button data-page="taxonomy"><span>04</span><span><b>Taxonomic integration</b><small>What did each assay see?</small></span></button>
+<button data-page="evidence"><span>05</span><span><b>Evidence & discordance</b><small>Why do assays disagree?</small></span></button>
+<button data-page="ecology"><span>06</span><span><b>Ecology</b><small>Which conclusions survive?</small></span></button>
+<button data-page="functions"><span>07</span><span><b>Functional biology</b><small>What functions were measured?</small></span></button>
+<button data-page="provenance"><span>08</span><span><b>Export & provenance</b><small>Can I reproduce this?</small></span></button></nav><div class="side-foot">Assay-native measurements remain separate. Integration summarizes evidence, not interchangeable abundance.</div></aside>
+<main class="main"><header class="topbar"><div><button class="btn mobile-menu" id="menu">☰</button> <span class="breadcrumb" id="breadcrumb">Study overview</span></div><div class="top-actions"><button class="btn" onclick="window.print()">Print / PDF</button><button class="btn primary" onclick="downloadAll()">Export data</button></div></header><div class="content" id="content">
+<section class="page active" id="overview"><div class="hero"><div><div class="eyebrow">Run at a glance</div><h1>Did the experiment work?</h1><p>A decision-first summary of assay completeness, sample trustworthiness, and evidence requiring attention.</p></div><span class="status" id="run-status">Run assessed</span></div><div class="steps"><div class="step">Experiment</div><div class="step">Samples</div><div class="step">Taxa</div><div class="step">Discordance</div><div class="step">Conclusions</div></div><div class="kpis" id="overview-kpis"></div><div class="grid"><div class="card span-8"><h2>Sample × assay completeness</h2><p class="sub">A fast check that each biological sample has enough information for integration.</p><div class="matrix" id="completeness"></div></div><div class="card span-4 attention"><h2>Attention required</h2><p class="sub">Items worth reviewing before interpretation.</p><div id="attention"></div></div><div class="card span-12"><h2>Evidence landscape</h2><p class="sub">How TRIARCHY classified taxon-level evidence across all biological samples.</p><div class="chart" id="overview-evidence"></div></div></div></section>
+<section class="page" id="qc"><div class="hero"><div><div class="eyebrow">Sequencing quality</div><h1>Which libraries are trustworthy?</h1><p>Compare retention, host burden, and QC decisions without losing the assay-specific context.</p></div></div><div class="tools"><select class="select" id="qc-assay"><option value="">All assays</option><option>WMS</option><option>16S</option><option>ITS</option></select><input class="search" id="qc-search" placeholder="Search libraries…"><button class="btn" onclick="downloadRows('qc')">Download QC TSV</button></div><div class="grid"><div class="card span-5"><h2>QC status by assay</h2><div class="chart" id="qc-chart"></div></div><div class="card span-7"><h2>Selected library</h2><p class="sub">Click a row below to inspect its key measurements.</p><div class="detail" id="qc-detail"></div></div><div class="card span-12"><div class="table-wrap" id="qc-table"></div></div></div></section>
+<section class="page" id="controls"><div class="hero"><div><div class="eyebrow">Control-aware evidence</div><h1>Signal or contamination?</h1><p>Trace every biological library to its relevant field, extraction, PCR, and library controls.</p></div></div><div class="grid"><div class="card span-5"><h2>Sample–control links</h2><p class="sub">Select a library to reveal only the controls that matter to it.</p><select class="select" id="control-library"></select><div id="control-graph" class="chart"></div></div><div class="card span-7"><h2>Probable contamination sources</h2><div class="chart" id="contam-chart"></div></div><div class="card span-12"><h2>Contamination evidence</h2><div class="tools"><input class="search" id="control-search" placeholder="Search sample or taxon…"><button class="btn" onclick="downloadRows('evidence','contamination-evidence.tsv')">Download evidence</button></div><div class="table-wrap" id="control-table"></div></div></div></section>
+<section class="page" id="taxonomy"><div class="hero"><div><div class="eyebrow">Cross-assay matrix</div><h1>What did each assay see?</h1><p>Detection is shown in assay scope; not-applicable evidence is never treated as absence.</p></div></div><div class="tools"><input class="search" id="tax-search" placeholder="Search taxon or sample…"><select class="select" id="tax-kingdom"><option value="">All kingdoms</option></select><button class="btn" onclick="downloadRows('evidence','taxonomic-integration.tsv')">Download matrix</button></div><div class="card"><div class="table-wrap" id="taxonomy-table"></div></div></section>
+<section class="page" id="evidence"><div class="hero"><div><div class="eyebrow">TRIARCHY core</div><h1>Why do the assays disagree?</h1><p>Explore authenticity, contamination, detection power, reference coverage, and the decision reason together.</p></div></div><div class="grid"><div class="card span-5"><h2>Evidence-class distribution</h2><div class="chart" id="evidence-chart"></div></div><div class="card span-7"><h2>Taxon detail</h2><select class="select" id="evidence-taxon"></select><div class="detail" id="evidence-detail" style="margin-top:1rem"></div></div><div class="card span-12"><div class="tools"><input class="search" id="evidence-search" placeholder="Search evidence…"><select class="select" id="evidence-class"><option value="">All classes</option></select><button class="btn" onclick="downloadRows('evidence')">Download evidence TSV</button></div><div class="table-wrap" id="evidence-table"></div></div></div></section>
+<section class="page" id="ecology"><div class="hero"><div><div class="eyebrow">Assay-native ecology</div><h1>Which conclusions survive?</h1><p>Diversity and concordance remain explicitly within assay scope. Cross-assay summaries compare detection and rank, never raw abundance.</p></div></div><div class="callout">Interpret each assay on its own measurement scale. Cross-assay concordance below reports detection overlap and rank agreement.</div><div class="grid"><div class="card span-6"><h2>Cross-assay presence agreement</h2><div class="chart" id="concordance-chart"></div></div><div class="card span-6"><h2>Alpha diversity</h2><div class="chart" id="alpha-chart"></div></div><div class="card span-12"><h2>Ecology tables</h2><div class="tools"><button class="btn" onclick="downloadRows('concordance')">Concordance TSV</button><button class="btn" onclick="downloadRows('alpha')">Alpha TSV</button><button class="btn" onclick="downloadRows('beta')">Beta TSV</button></div><div class="table-wrap" id="ecology-table"></div></div></div></section>
+<section class="page" id="functions"><div class="hero"><div><div class="eyebrow">WMS functional evidence</div><h1>What functions were measured?</h1><p>Functional calls come from WMS. Complementary assays support organisms associated with functions—not the pathways themselves.</p></div></div><div class="callout warn">Do not describe 16S or ITS evidence as direct pathway validation.</div><div class="card"><div class="tools"><input class="search" id="function-search" placeholder="Search pathway or sample…"><button class="btn" onclick="downloadRows('functions')">Download functions TSV</button></div><div class="table-wrap" id="function-table"></div></div></section>
+<section class="page" id="provenance"><div class="hero"><div><div class="eyebrow">Publication & reproducibility</div><h1>Export defensible evidence</h1><p>Download the tables behind every view, print publication-ready pages, and retain the exact run identity.</p></div></div><div class="grid"><div class="card span-5"><h2>Export center</h2><p class="sub">All exports contain the unrounded values used by the dashboard.</p><div class="tools"><button class="btn primary" onclick="downloadAll()">Download all tables</button><button class="btn" onclick="window.print()">Print report / PDF</button></div><div class="callout">Suggested citation metadata and model calibration status are included in the provenance bundle.</div></div><div class="card span-7"><h2>Run identity</h2><div class="detail" id="run-identity"></div></div><div class="card span-6"><h2>Run provenance</h2><pre class="provenance" id="provenance-json"></pre></div><div class="card span-6"><h2>Evidence model</h2><pre class="provenance" id="model-json"></pre></div></div></section>
+</div></main></div><script id="triarchy-data" type="application/json">__TRIARCHY_DATA__</script>
+<script>
+const D=JSON.parse(document.getElementById('triarchy-data').textContent);const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};const yes=v=>String(v).toLowerCase()==='true';
+const title=s=>String(s||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
+const cls=s=>{s=String(s||'').toLowerCase();return /pass|complete|include|concordant|authentic/.test(s)?'good':/fail|contamin|discord/.test(s)?'bad':/limit|partial|restrict|indeterminate/.test(s)?'warn':'info'};
+function pill(v){return `<span class="pill ${cls(v)}">${esc(title(v||'not available'))}</span>`}
+function kpi(value,label){return `<div class="kpi"><div class="value">${esc(value)}</div><div class="label">${esc(label)}</div></div>`}
+function bars(items){if(!items.length)return empty('No values available','This run did not emit data for this view.');const max=Math.max(...items.map(x=>x[1]),1);return `<div class="bars">${items.map(([l,v,c])=>`<div class="bar-row"><span title="${esc(l)}">${esc(l)}</span><div class="track"><div class="fill" style="width:${100*v/max}%;${c?`background:${c}`:''}"></div></div><b>${esc(v)}</b></div>`).join('')}</div>`}
+function empty(a,b){return `<div class="empty"><strong>${esc(a)}</strong>${esc(b)}</div>`}
+function table(rows,cols,id){if(!rows.length)return empty('No matching rows','Adjust the filters or inspect the upstream output.');cols=cols||Object.keys(rows[0]);return `<table data-table="${id||''}"><thead><tr>${cols.map(c=>`<th>${esc(title(c))}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr data-index="${i}">${cols.map(c=>`<td>${/status|classification|state/.test(c)?pill(r[c]):esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function download(name,rows){if(!rows?.length)return;const cols=Object.keys(rows[0]);const clean=v=>String(v??'').replaceAll('\t',' ').replaceAll('\n',' ');const t=[cols.join('\t'),...rows.map(r=>cols.map(c=>clean(r[c])).join('\t'))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/tab-separated-values'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+function downloadRows(key,name){download(name||`${key}.tsv`,D[key])}function downloadAll(){Object.entries(D).filter(([,v])=>Array.isArray(v)).forEach(([k,v],i)=>setTimeout(()=>download(`triarchy-${k}.tsv`,v),i*120))}
+const biological=D.samples.filter(r=>r.sample_role==='biological');const bioIds=[...new Set(biological.map(r=>r.biological_sample_id))];const controls=D.samples.filter(r=>r.sample_role!=='biological');const assays=['WMS','16S','ITS'];
+function counts(rows,key){return rows.reduce((a,r)=>(a[r[key]||'not_available']=(a[r[key]||'not_available']||0)+1,a),{})}
+function nav(){ $$('#nav button').forEach(b=>b.onclick=()=>{$$('#nav button').forEach(x=>x.classList.remove('active'));$$('.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.page).classList.add('active');$('#breadcrumb').textContent=b.querySelector('b').textContent;$('#sidebar').classList.remove('open');scrollTo(0,0)})}
+function overview(){const evc=counts(D.evidence,'classification');const failed=D.confidence.filter(r=>r.recommended_use!=='include');const contam=D.evidence.filter(r=>num(r.contamination_probability)>=.5||/contamin/i.test(r.classification));const discord=D.evidence.filter(r=>/discord/i.test(r.classification));const high=D.evidence.filter(r=>num(r.biological_authenticity)>=.8&&num(r.contamination_probability)<.5);$('#overview-kpis').innerHTML=[kpi(bioIds.length,'Biological samples'),...assays.map(a=>kpi(biological.filter(r=>r.assay===a).length,`${a} libraries`)),kpi(controls.length,'Control libraries'),kpi(D.confidence.filter(r=>r.recommended_use==='include').length,'Samples passing'),kpi(high.length,'High-confidence taxa'),kpi(contam.length,'Probable contaminants')].join('');const byId=Object.fromEntries(D.confidence.map(r=>[r.biological_sample_id,r]));$('#completeness').innerHTML=table(bioIds.map(id=>{const c=byId[id]||{};return{sample:id,WMS:c.wms_qc_status||'missing','16S':c['16s_qc_status']||'missing',ITS:c.its_qc_status||'missing',controls:c.control_status||'unknown',integration:c.cross_assay_status||'unknown',use:c.recommended_use||'review'}}),['sample','WMS','16S','ITS','controls','integration','use']);const issues=[];if(failed.length)issues.push(`${failed.length} sample(s) excluded or restricted`);const missing=D.confidence.filter(r=>['wms_qc_status','16s_qc_status','its_qc_status'].some(k=>!r[k]||r[k]==='missing'));if(missing.length)issues.push(`${missing.length} sample(s) have missing assay evidence`);if(contam.length)issues.push(`${contam.length} taxon calls show contamination concern`);if(discord.length)issues.push(`${discord.length} unresolved discordance(s)`);issues.push(`${D.evidence.filter(r=>/indeterminate/.test(r.classification)).length} indeterminate evidence call(s)`);$('#attention').innerHTML=issues.some(x=>!x.startsWith('0'))?`<ul>${issues.filter(x=>!x.startsWith('0')).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:empty('No critical flags','All emitted checks passed.');$('#overview-evidence').innerHTML=bars(Object.entries(evc).sort((a,b)=>b[1]-a[1]));}
+function qc(){const render=()=>{const q=$('#qc-search').value.toLowerCase(),a=$('#qc-assay').value;const rows=D.qc.filter(r=>(!a||r.assay===a)&&Object.values(r).join(' ').toLowerCase().includes(q));$('#qc-table').innerHTML=table(rows,['library_id','assay','input_reads','retained_reads','q30_rate','host_fraction','quality_factor','qc_status'],'qc');$('#qc-chart').innerHTML=bars(Object.entries(counts(rows,'assay')).map(([k,v])=>[k,v]));const trs=$$('#qc-table tbody tr');trs.forEach((tr,i)=>tr.onclick=()=>qcDetail(rows[i]));qcDetail(rows[0])};$('#qc-search').oninput=render;$('#qc-assay').onchange=render;render()}
+function qcDetail(r){$('#qc-detail').innerHTML=r?`<h3>${esc(r.library_id)}</h3><div class="detail-grid"><div class="metric"><span>Status</span><b>${pill(r.qc_status)}</b></div><div class="metric"><span>Retention</span><b>${r.input_reads&&num(r.input_reads)>0?Math.round(100*num(r.retained_reads)/num(r.input_reads))+'%':'Not reported'}</b></div><div class="metric"><span>Host fraction</span><b>${r.host_fraction||'—'}</b></div></div><p class="sub">Sources: ${esc(r.qc_sources||'not reported')}</p>`:empty('Select a library','Choose a row to see its metrics')}
+function controlPage(){const libs=[...new Set(D.controls.map(r=>r.library_id))];$('#control-library').innerHTML=libs.map(x=>`<option>${esc(x)}</option>`).join('');const graph=()=>{const id=$('#control-library').value,links=D.controls.filter(r=>r.library_id===id);$('#control-graph').innerHTML=links.length?`<div class="detail"><h3>${esc(id)}</h3>${links.map(x=>`<p>↳ ${pill(x.control_stage)} <b>${esc(x.control_library_id)}</b><br><small>${esc(x.reason)}</small></p>`).join('')}</div>`:empty('No linked controls','No edges were emitted for this library.')};$('#control-library').onchange=graph;graph();const sources=counts(D.evidence.filter(r=>r.probable_contamination_source&&r.probable_contamination_source!=='none'),'probable_contamination_source');$('#contam-chart').innerHTML=Object.keys(sources).length?bars(Object.entries(sources)):empty('No localized contamination','No probable source was assigned in this run.');const render=()=>{const q=$('#control-search').value.toLowerCase();const rows=D.evidence.filter(r=>num(r.contamination_probability)>0||/contamin/i.test(r.classification)).filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));$('#control-table').innerHTML=table(rows,['biological_sample_id','canonical_name','field_contamination_score','extraction_contamination_score','pcr_contamination_score','library_contamination_score','contamination_probability','probable_contamination_source','classification','decision_reason'])};$('#control-search').oninput=render;render()}
+function taxonomy(){const kingdoms=[...new Set(D.evidence.map(r=>r.kingdom))].filter(Boolean);$('#tax-kingdom').innerHTML+=[...kingdoms].map(x=>`<option>${esc(x)}</option>`).join('');const render=()=>{const q=$('#tax-search').value.toLowerCase(),k=$('#tax-kingdom').value;const rows=D.evidence.filter(r=>(!k||r.kingdom===k)&&Object.values(r).join(' ').toLowerCase().includes(q)).map(r=>({sample:r.biological_sample_id,taxon:r.canonical_name,kingdom:r.kingdom,rank:r.comparison_rank,WMS:yes(r.wms_measured)?(yes(r.wms_detected)?'detected':'not detected'):'N/A','16S':yes(r['16s_measured'])?(yes(r['16s_detected'])?'detected':'not detected'):'N/A',ITS:yes(r.its_measured)?(yes(r.its_detected)?'detected':'not detected'):'N/A',integration:r.classification,reason:r.decision_reason}));$('#taxonomy-table').innerHTML=table(rows,['sample','taxon','kingdom','rank','WMS','16S','ITS','integration','reason'])};$('#tax-search').oninput=render;$('#tax-kingdom').onchange=render;render()}
+function evidence(){const classes=[...new Set(D.evidence.map(r=>r.classification))].filter(Boolean);$('#evidence-class').innerHTML+=classes.map(x=>`<option value="${esc(x)}">${esc(title(x))}</option>`).join('');const taxa=[...new Set(D.evidence.map(r=>r.canonical_name))].filter(Boolean);$('#evidence-taxon').innerHTML=taxa.map(x=>`<option>${esc(x)}</option>`).join('');$('#evidence-chart').innerHTML=bars(Object.entries(counts(D.evidence,'classification')).sort((a,b)=>b[1]-a[1]));const detail=()=>{const tax=$('#evidence-taxon').value,rows=D.evidence.filter(r=>r.canonical_name===tax);if(!rows.length)return;const auth=rows.reduce((a,r)=>a+num(r.biological_authenticity),0)/rows.length,cont=rows.reduce((a,r)=>a+num(r.contamination_probability),0)/rows.length;$('#evidence-detail').innerHTML=`<h3><i>${esc(tax)}</i></h3><div class="detail-grid"><div class="metric"><span>Mean authenticity</span><b>${auth.toFixed(2)}</b></div><div class="metric"><span>Mean contamination</span><b>${cont.toFixed(2)}</b></div><div class="metric"><span>Samples</span><b>${rows.length}</b></div></div><p><b>Why TRIARCHY reached this result</b><br>${esc(rows[0].decision_reason||'No explanation emitted.')}</p>`};$('#evidence-taxon').onchange=detail;detail();const render=()=>{const q=$('#evidence-search').value.toLowerCase(),c=$('#evidence-class').value;const rows=D.evidence.filter(r=>(!c||r.classification===c)&&Object.values(r).join(' ').toLowerCase().includes(q));$('#evidence-table').innerHTML=table(rows,['biological_sample_id','canonical_name','kingdom','assay_support','biological_authenticity','authenticity_ci_low','authenticity_ci_high','contamination_probability','classification','discordance_reason','decision_reason'])};$('#evidence-search').oninput=render;$('#evidence-class').onchange=render;render()}
+function ecology(){const pairs={};D.concordance.forEach(r=>{const k=r.assay_pair||'comparison';(pairs[k]??=[]).push(num(r.jaccard_presence))});$('#concordance-chart').innerHTML=bars(Object.entries(pairs).map(([k,v])=>[k,Math.round(100*v.reduce((a,b)=>a+b,0)/v.length)]));const alphaBy={};D.alpha.forEach(r=>{const k=r.assay||'unknown';(alphaBy[k]??=[]).push(num(r.shannon_diversity||r.shannon||0))});$('#alpha-chart').innerHTML=Object.keys(alphaBy).length?bars(Object.entries(alphaBy).map(([k,v])=>[k,(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2)])):empty('No alpha-diversity rows','The selected run emitted an empty high-confidence diversity table.');$('#ecology-table').innerHTML=table(D.concordance,['biological_sample_id','kingdom','assay_pair','shared_taxa','union_taxa','jaccard_presence','spearman_rank_correlation','rank_agreement_score'])}
+function functions(){const render=()=>{const q=$('#function-search').value.toLowerCase();$('#function-table').innerHTML=table(D.functions.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q)))};$('#function-search').oninput=render;render()}
+function provenance(){const p=D.provenance;$('#run-identity').innerHTML=`<div class="detail-grid"><div class="metric"><span>Workflow</span><b>${esc(p.workflow||'TRIARCHY')}</b></div><div class="metric"><span>Nextflow</span><b>${esc(p.workflow_version||'unknown')}</b></div><div class="metric"><span>Run mode</span><b>${esc(title(p.run_mode||'production'))}</b></div></div><p class="sub">Git commit: ${esc(p.git_commit||'unknown')}</p>`;$('#provenance-json').textContent=JSON.stringify(p,null,2);$('#model-json').textContent=JSON.stringify(D.model,null,2)}
+nav();overview();qc();controlPage();taxonomy();evidence();ecology();functions();provenance();$('#menu').onclick=()=>$('#sidebar').classList.toggle('open');
+</script></body></html>'''
 
 
 def parser() -> argparse.ArgumentParser:
@@ -928,17 +909,6 @@ def parser() -> argparse.ArgumentParser:
     )
     split.add_argument("--outdir", type=Path, required=True)
     split.set_defaults(func=cmd_split)
-
-    mock = sub.add_parser("mock-profile")
-    mock.add_argument("--library-id", required=True)
-    mock.add_argument("--assay", choices=("WMS", "16S", "ITS"), required=True)
-    mock.add_argument("--output", type=Path, required=True)
-    mock.set_defaults(func=cmd_mock_profile)
-
-    functions = sub.add_parser("mock-functions")
-    functions.add_argument("--library-id", required=True)
-    functions.add_argument("--output", type=Path, required=True)
-    functions.set_defaults(func=cmd_mock_functions)
 
     bracken = sub.add_parser("standardize-bracken")
     bracken.add_argument("--library-id", required=True)
@@ -1026,6 +996,10 @@ def parser() -> argparse.ArgumentParser:
     report.add_argument("--alpha-diversity", type=Path, required=True)
     report.add_argument("--beta-diversity", type=Path, required=True)
     report.add_argument("--sample-confidence", type=Path, required=True)
+    report.add_argument("--qc-metrics", type=Path, required=True)
+    report.add_argument("--samples", type=Path, required=True)
+    report.add_argument("--controls", type=Path, required=True)
+    report.add_argument("--functions", type=Path, required=True)
     report.add_argument("--evidence-model", type=Path, required=True)
     report.add_argument("--provenance", type=Path, required=True)
     report.add_argument("--output", type=Path, required=True)

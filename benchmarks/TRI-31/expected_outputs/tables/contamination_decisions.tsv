@@ -1,4 +1,0 @@
-taxon	pattern	primary_control	decision	showcase_message
-CON_A	field_and_extraction_reagent	FIELD_BLANK;EB01;EB02	probable_contaminant	Reagent signal enriched in field and extraction controls.
-CON_B	batch_B02_extraction	EB02	cross_contamination_candidate	Batch-local signal elevated in extraction batch B02.
-CON_C	ITS_PCR_blank	PCR_BLANK_ITS	probable_contaminant	ITS-specific contaminant concentrated in the ITS PCR blank.

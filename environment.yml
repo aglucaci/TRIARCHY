@@ -1,4 +1,4 @@
-name: triarchy
+name: TRIARCHY
 channels:
   - conda-forge
   - bioconda

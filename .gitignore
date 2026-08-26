@@ -19,8 +19,17 @@ output/
 tmp/
 data/*
 !data/README.md
+!data/benchmarks/
+!data/benchmarks/**
 
 # Manuscript build products
+/*.aux
+/*.bbl
+/*.blg
+/*.fdb_latexmk
+/*.fls
+/*.out
+/*.pdf
 manuscript/*.aux
 manuscript/*.bbl
 manuscript/*.blg
@@ -39,3 +48,8 @@ __pycache__/
 *.pyc
 .venv/
 env/
+
+# R
+.Rhistory
+.RData
+.Ruserdata

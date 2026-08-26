@@ -39,6 +39,7 @@ ENA_FIELDS = [
     "sample_accession",
     "secondary_sample_accession",
     "experiment_accession",
+    "experiment_alias",
     "sample_alias",
     "experiment_title",
     "study_title",
@@ -48,7 +49,10 @@ ENA_FIELDS = [
     "library_strategy",
     "library_source",
     "library_selection",
+    "library_name",
+    "library_construction_protocol",
     "library_layout",
+    "target_gene",
     "instrument_platform",
     "instrument_model",
     "fastq_ftp",
@@ -128,7 +132,7 @@ DATASETS = {
             dataset_id="TRI-REAL-01",
             study_accession="ERP124610",
             qiita_id="12201",
-            title="Shaffer mixed bacterial/fungal extraction and mock benchmark",
+            title="Shaffer mixed bacterial/fungal extraction and mock cohort",
             purpose=(
                 "Primary empirical TRIARCHY validation target with physical "
                 "mixed-community material, dilution structure, blanks, and "
@@ -156,7 +160,7 @@ DATASETS = {
             qiita_id="13114",
             title="EMP500 matched multi-environment subset",
             purpose=(
-                "Optional breadth benchmark: select complete matched cases "
+                "Optional breadth cohort: select complete matched cases "
                 "across several environment categories."
             ),
             default_max_groups=24,
@@ -228,9 +232,13 @@ def split_ena_list(value: str) -> list[str]:
 
 def text_blob(row: dict[str, str]) -> str:
     fields = (
+        "target_gene",
         "library_strategy",
         "library_source",
         "library_selection",
+        "library_name",
+        "library_construction_protocol",
+        "experiment_alias",
         "experiment_title",
         "sample_title",
         "sample_alias",

@@ -1,3 +1,0 @@
-library_id	control_library_id	control_stage	relationship	priority	reason
-EXT_NEG_01	POS_MOCK_WMS	extraction	paired	1	first edge in cycle
-POS_MOCK_WMS	EXT_NEG_01	extraction	paired	1	second edge in cycle

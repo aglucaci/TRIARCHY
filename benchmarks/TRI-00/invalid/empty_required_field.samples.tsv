@@ -1,2 +1,0 @@
-library_id	biological_sample_id	specimen_id	subject_id	assay	sample_role	sample_material	environment_category	library_layout	fastq_r1	fastq_r2	extraction_batch	pcr_plate	library_batch	sequencing_run	technical_replicate
-EMPTY_REQUIRED	BIO_EMPTY		SUBJ_EMPTY	WMS	biological	active_air	return_air	paired	reads/empty_R1.fastq.gz	reads/empty_R2.fastq.gz	EB01		LB01	SR01	1
