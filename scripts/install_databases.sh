@@ -59,7 +59,7 @@ Overrides:
   TRIARCHY_KRAKEN_URL  Prebuilt Kraken2 archive URL
   TRIARCHY_KRAKEN_MD5_URL  Prebuilt Kraken2 checksum-manifest URL
   TRIARCHY_KRAKEN_SIZE  Expected archive size in bytes
-  TRIARCHY_DOWNLOAD_ATTEMPTS  Retry attempts per download stage (default: 8)
+  TRIARCHY_DOWNLOAD_ATTEMPTS  Retry attempts per download stage (default: 20)
   NO_COLOR             Disable ANSI colors
 EOF
 }
@@ -212,7 +212,7 @@ report_kraken_library_progress() {
 
 retry_download() {
     local attempt=1
-    local max_attempts="${TRIARCHY_DOWNLOAD_ATTEMPTS:-8}"
+    local max_attempts="${TRIARCHY_DOWNLOAD_ATTEMPTS:-20}"
     local delay
     resume_kraken_partial_downloads ||
         info "Initial partial-file recovery did not complete; k2 will retry it"
@@ -384,7 +384,11 @@ download() {
         return
     fi
     info "Downloading ${url}"
-    curl --fail --location --retry 5 --retry-delay 5 \
+    curl --fail --location \
+        --retry "${TRIARCHY_DOWNLOAD_ATTEMPTS:-20}" \
+        --retry-all-errors \
+        --retry-delay 10 \
+        --connect-timeout 60 \
         --continue-at - --output "${partial}" "${url}"
     mv "${partial}" "${destination}"
 }
