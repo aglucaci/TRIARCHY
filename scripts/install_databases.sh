@@ -363,6 +363,7 @@ if [[ "${PROFILE}" == "standard" ]]; then
         fi
     fi
 fi
+mkdir -p "${PROJECT_DIR}/references" "${PROJECT_DIR}/conf"
 readonly MANIFEST="${PROJECT_DIR}/references/manifest.tsv"
 MANIFEST_WORK="${CHECKPOINT_DIR}/manifest.tsv.partial"
 printf 'resource\tversion\tsource\tpath\tsha256\tinstalled_at\n' >"${MANIFEST_WORK}"
@@ -755,8 +756,9 @@ record humann_chocophlan "${PROFILE}" "humann_databases" "${humann_nucleotide}"
 record humann_uniref "${PROFILE}" "humann_databases" "${humann_protein}"
 
 config="${PROJECT_DIR}/conf/references.config"
+config_work="${CHECKPOINT_DIR}/references.config.partial"
 humann_bypass_prescreen=false
-cat >"${config}" <<EOF
+cat >"${config_work}" <<EOF
 params {
     host_index = '${host_index_base}'
     kraken2_db = '${kraken_db_dir}'
@@ -768,6 +770,7 @@ params {
 }
 EOF
 
+mv "${config_work}" "${config}"
 mv "${MANIFEST_WORK}" "${MANIFEST}"
 success "Reference installation complete in $(format_duration $((SECONDS - INSTALL_STARTED)))"
 info "Progress: ${TOTAL_STEPS}/${TOTAL_STEPS} stages validated (100%)"
