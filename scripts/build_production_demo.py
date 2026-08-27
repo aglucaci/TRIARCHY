@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the deterministic TRIARCHY Production Smoke Demo v1.0.
+"""Build the deterministic TRIARCHY Production Demo v1.0.
 
 All reads are generated from version-pinned public NCBI nucleotide
 records. The resulting manifests are valid production inputs; the normal
@@ -31,10 +31,11 @@ from typing import Iterator, TextIO
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "data" / "production_smoke"
+DEFAULT_OUTPUT = ROOT / "data" / "production_demo"
+DATASET_NAME = "TRIARCHY Production Demo"
 GENERATOR_VERSION = "1.0"
 DEFAULT_SEED = 20260827
-USER_AGENT = "TRIARCHY-production-smoke/1.0"
+USER_AGENT = "TRIARCHY-production-demo/1.0"
 
 SAMPLE_FIELDS = [
     "library_id", "biological_sample_id", "specimen_id", "subject_id",
@@ -462,7 +463,7 @@ def sample_rows(reads_dir: Path) -> list[dict[str, object]]:
             "extraction_batch": library.extraction_batch,
             "pcr_plate": library.pcr_plate,
             "library_batch": library.library_batch,
-            "sequencing_run": "SEQ_SMOKE_01",
+            "sequencing_run": "SEQ_DEMO_01",
             "technical_replicate": "1",
         })
     return rows
@@ -542,7 +543,7 @@ def crosswalk_rows() -> list[dict[str, object]]:
                     "canonical_name": canonical_name,
                     "canonical_rank": "genus",
                     "canonical_lineage": lineage,
-                    "mapping_method": "smoke_truth_shared_genus",
+                    "mapping_method": "demo_truth_shared_genus",
                     "mapping_confidence": "1",
                     "database_version": "production_installed",
                     "database_coverage": "0.95" if assay != "WMS" or canonical_name != "Saccharomyces" else "0.45",
@@ -570,7 +571,7 @@ def expectation_rows() -> list[dict[str, object]]:
 
 
 def assay_performance_rows() -> list[dict[str, object]]:
-    """Use production defaults with an explicit smoke-study fungal prior."""
+    """Use production defaults with an explicit demo-study fungal prior."""
     rows = []
     with (ROOT / "conf" / "assay_performance.tsv").open(
         encoding="utf-8", newline=""
@@ -611,6 +612,8 @@ def ready_dataset(output: Path, seed: int, scale: float, error_rate: float) -> b
     except (OSError, json.JSONDecodeError):
         return False
     expected = payload.get("parameters", {})
+    if payload.get("dataset") != DATASET_NAME or payload.get("version") != GENERATOR_VERSION:
+        return False
     if expected != {"seed": seed, "scale": scale, "error_rate": error_rate}:
         return False
     reads_ready = all(
@@ -637,7 +640,7 @@ def ready_dataset(output: Path, seed: int, scale: float, error_rate: float) -> b
 def build(args: argparse.Namespace) -> dict[str, object]:
     output = args.output.resolve()
     if not args.force and ready_dataset(output, args.seed, args.scale, args.error_rate):
-        print(f"TRIARCHY production smoke dataset already exists: {output}")
+        print(f"TRIARCHY production demo dataset already exists: {output}")
         return json.loads((output / "dataset.json").read_text(encoding="utf-8"))
 
     references_dir = output / "references"
@@ -725,7 +728,7 @@ def build(args: argparse.Namespace) -> dict[str, object]:
     (output / "checksums.sha256").write_text(checksum_text, encoding="utf-8")
 
     payload = {
-        "dataset": "TRIARCHY Production Smoke Demo",
+        "dataset": DATASET_NAME,
         "version": GENERATOR_VERSION,
         "parameters": {
             "seed": args.seed,
@@ -746,11 +749,11 @@ def build(args: argparse.Namespace) -> dict[str, object]:
     }
     (output / "dataset.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     (output / "README.md").write_text(
-        "# TRIARCHY Production Smoke Demo v1.0\n\n"
+        "# TRIARCHY Production Demo v1.0\n\n"
         "Deterministic paired reads generated from version-pinned NCBI nucleotide records. "
         "These are normal production inputs and require the complete TRIARCHY production databases.\n\n"
         "Run from the TRIARCHY repository with:\n\n"
-        "```bash\ntriarchy smoke --profile laptop --resume\n```\n\n"
+        "```bash\ntriarchy demo --profile laptop --resume\n```\n\n"
         "See `metadata/truth.tsv`, `metadata/library_composition.tsv`, and "
         "`metadata/expected_outcomes.tsv` for the designed evidence patterns.\n",
         encoding="utf-8",

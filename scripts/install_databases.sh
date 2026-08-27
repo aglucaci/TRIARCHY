@@ -757,7 +757,10 @@ record humann_uniref "${PROFILE}" "humann_databases" "${humann_protein}"
 
 config="${PROJECT_DIR}/conf/references.config"
 config_work="${CHECKPOINT_DIR}/references.config.partial"
-humann_bypass_prescreen=false
+# TRIARCHY supplies Kraken2/Bracken for taxonomy but does not provision a
+# MetaPhlAn marker database. HUMAnN therefore searches the installed full
+# ChocoPhlAn database directly instead of invoking an unusable prescreen.
+humann_bypass_prescreen=true
 cat >"${config_work}" <<EOF
 params {
     host_index = '${host_index_base}'

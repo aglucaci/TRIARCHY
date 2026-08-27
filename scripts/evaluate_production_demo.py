@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate a completed production smoke run against its designed outcomes."""
+"""Evaluate a completed production demo against its designed outcomes."""
 
 from __future__ import annotations
 
@@ -92,7 +92,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
 
     required_failures = [row for row in checks if row["required"] and not row["passed"]]
     return {
-        "evaluation": "TRIARCHY Production Smoke Demo v1.0",
+        "evaluation": "TRIARCHY Production Demo v1.0",
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "results": str(args.results.resolve()),
         "ok": not required_failures,
@@ -118,7 +118,7 @@ def main() -> int:
     except (OSError, RuntimeError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
-    output = args.output or args.results / "production_smoke_evaluation.json"
+    output = args.output or args.results / "production_demo_evaluation.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     for check in report["checks"]:
@@ -127,7 +127,7 @@ def main() -> int:
             f"{status} {check['check_id']}: expected {check['expected']}; "
             f"observed {check['observed']}"
         )
-    print(f"Production smoke evaluation: {report['passed']}/{report['total']} checks passed")
+    print(f"Production demo evaluation: {report['passed']}/{report['total']} checks passed")
     print(f"Evaluation report: {output}")
     return 0 if report["ok"] else 1
 

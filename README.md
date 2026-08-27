@@ -58,8 +58,8 @@ installation. Production work files and results require additional capacity;
 1 TB of shared storage is a practical starting point, with more space needed
 for large input studies. Nodes with 128 GB RAM are recommended to leave
 operating-system and database-loading headroom above the 96 GB process request.
-The `laptop` profile's 8 GB high-task cap is intended for constrained smoke
-testing and is not a dependable baseline for full production datasets.
+The `laptop` profile's 8 GB high-task cap is intended for the constrained demo
+and is not a dependable baseline for full production datasets.
 
 ## Install
 
@@ -101,9 +101,15 @@ automatically, and the completed archive must match MD5
 full-length DADA2 artifact remain accepted by their pinned checksum. The
 optional `--silva-archive` input is only needed for fully air-gapped systems.
 
-## Production smoke run
+TRIARCHY uses Kraken2/Bracken for WMS taxonomy and installs the complete HUMAnN
+ChocoPhlAn and UniRef90 databases for functional profiling. Because the
+production reference profile does not install a separate MetaPhlAn marker
+database, HUMAnN runs with its supported `--bypass-prescreen` mode and searches
+the installed full ChocoPhlAn database directly.
 
-TRIARCHY includes a deterministic production smoke study built from
+## Production demo
+
+TRIARCHY includes a deterministic production demonstration built from
 version-pinned public NCBI nucleotide sequences. It contains 21 WMS, 16S, and ITS
 libraries spanning three matched biological samples, stage-specific negative
 controls, a mixed positive control, human mitochondrial reads, and designed
@@ -114,18 +120,18 @@ Build the dataset and run the complete production pipeline:
 
 ```bash
 mamba activate TRIARCHY
-triarchy smoke --profile laptop --resume
+triarchy demo --profile laptop --resume
 ```
 
 The command downloads the small source references from NCBI, generates exactly
 317,000 deterministic paired reads, validates the manifests and FASTQs, runs
 TRIARCHY, and evaluates the resulting evidence and host-removal metrics against
-the designed truth table. Outputs are written to `results/production_smoke`.
+the designed truth table. Outputs are written to `results/production_demo`.
 
 To generate and validate the inputs without starting Nextflow:
 
 ```bash
-triarchy smoke --build-only
+triarchy demo --build-only
 ```
 
 Use `--offline` after the NCBI references have been cached, or `--force` to
@@ -136,7 +142,7 @@ Nextflow work directory on shared storage visible to compute nodes:
 
 ```bash
 mamba activate TRIARCHY
-triarchy smoke \
+triarchy demo \
   --profile slurm \
   --site-config /shared/project/triarchy-site.config \
   --work-dir /shared/scratch/$USER/triarchy-work
