@@ -18,6 +18,7 @@ dependencies:
   - cutadapt
   - xopen>=1.6
   - itsxpress
+  - vsearch
   - r-base
   - bioconductor-dada2
   - ncbi-datasets-cli

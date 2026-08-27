@@ -24,6 +24,43 @@ Apple-silicon macOS production installs use native tool shims where required.
 For large studies, use a workstation, HPC scheduler, or cloud executor rather
 than a memory-constrained laptop.
 
+## Minimum production specifications
+
+For a complete production run using the full Kraken2 PlusPFP, HUMAnN, host,
+SILVA, and ITS reference set, provision at least:
+
+| Resource | Minimum production specification |
+| --- | --- |
+| Largest compute-job slot | 12 CPU cores |
+| Memory per high-resource job | 96 GB RAM |
+| Maximum job wall time | 48 hours |
+| Free space for reference installation | 450 GB |
+| Recommended shared storage | 1 TB or more |
+| GPU | Not required |
+
+The built-in SLURM profile requests the following resources per task:
+
+| Task class | CPUs | Memory | Wall time |
+| --- | ---: | ---: | ---: |
+| Low | 1 | 2 GB | 1 hour |
+| Medium | 4 | 16 GB | 8 hours |
+| High | 12 | 96 GB | 48 hours |
+
+For HPC execution, use Linux (preferably x86-64), SLURM with `sbatch`, Bash,
+Java 17 or later, and the named `TRIARCHY` Mamba/Conda environment. The
+repository, reference databases, input FASTQs, result directory, and Nextflow
+work directory must be on shared POSIX storage visible at identical paths from
+the login and compute nodes. Internet access is needed during database
+installation unless the validated archives are supplied locally.
+
+The database installer enforces 450 GB of free space for a new reference
+installation. Production work files and results require additional capacity;
+1 TB of shared storage is a practical starting point, with more space needed
+for large input studies. Nodes with 128 GB RAM are recommended to leave
+operating-system and database-loading headroom above the 96 GB process request.
+The `laptop` profile's 8 GB high-task cap is intended for constrained smoke
+testing and is not a dependable baseline for full production datasets.
+
 ## Install
 
 Create the named environment and install the complete production references:
@@ -63,6 +100,53 @@ automatically, and the completed archive must match MD5
 `41f1d231ce5079b88f4c01742c288ba9`. Existing installations of the earlier
 full-length DADA2 artifact remain accepted by their pinned checksum. The
 optional `--silva-archive` input is only needed for fully air-gapped systems.
+
+## Production smoke run
+
+TRIARCHY includes a deterministic production smoke study built from
+version-pinned public NCBI nucleotide sequences. It contains 21 WMS, 16S, and ITS
+libraries spanning three matched biological samples, stage-specific negative
+controls, a mixed positive control, human mitochondrial reads, and designed
+cross-assay edge cases. It uses the normal production workflow and installed
+reference databases—there are no stub tools or precomputed taxonomic calls.
+
+Build the dataset and run the complete production pipeline:
+
+```bash
+mamba activate TRIARCHY
+triarchy smoke --profile laptop --resume
+```
+
+The command downloads the small source references from NCBI, generates exactly
+317,000 deterministic paired reads, validates the manifests and FASTQs, runs
+TRIARCHY, and evaluates the resulting evidence and host-removal metrics against
+the designed truth table. Outputs are written to `results/production_smoke`.
+
+To generate and validate the inputs without starting Nextflow:
+
+```bash
+triarchy smoke --build-only
+```
+
+Use `--offline` after the NCBI references have been cached, or `--force` to
+regenerate all reads with the selected `--seed`, `--scale`, and `--error-rate`.
+
+On a SLURM HPC, keep the repository, production references, inputs, results, and
+Nextflow work directory on shared storage visible to compute nodes:
+
+```bash
+mamba activate TRIARCHY
+triarchy smoke \
+  --profile slurm \
+  --site-config /shared/project/triarchy-site.config \
+  --work-dir /shared/scratch/$USER/triarchy-work
+```
+
+The built-in SLURM profile requests 1 CPU/2 GB for low, 4 CPU/16 GB for medium,
+and 12 CPU/96 GB for high-resource tasks. The optional site configuration is
+where a cluster-specific partition, allocation, QoS, module, or scratch policy
+should be declared. The activated `TRIARCHY` environment and database paths
+must also be available at the same paths from submitted jobs.
 
 ## Production inputs
 

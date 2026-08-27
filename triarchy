@@ -285,13 +285,24 @@ def command_run(args: argparse.Namespace) -> int:
         args.profile,
         "-c",
         str(reference_config),
+    ]
+    site_config = getattr(args, "site_config", None)
+    if site_config:
+        if not site_config.is_file():
+            print(f"ERROR: site configuration is missing: {site_config}", file=sys.stderr)
+            return 2
+        command.extend(["-c", str(site_config.resolve())])
+    work_dir = getattr(args, "work_dir", None)
+    if work_dir:
+        command.extend(["-work-dir", str(work_dir.resolve())])
+    command.extend([
         "--samples",
         str(args.samples.resolve()),
         "--controls",
         str(args.controls.resolve()),
         "--outdir",
         str(args.outdir),
-    ]
+    ])
     if args.resume:
         command.append("-resume")
     extra = list(args.nextflow_args or [])
@@ -359,6 +370,65 @@ def command_database_install(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_smoke(args: argparse.Namespace) -> int:
+    """Build and optionally run the real-reference production smoke study."""
+    builder = ROOT / "scripts" / "build_production_smoke_demo.py"
+    evaluator = ROOT / "scripts" / "evaluate_production_smoke.py"
+    data_dir = args.data_dir if args.data_dir.is_absolute() else ROOT / args.data_dir
+    results_dir = args.outdir if args.outdir.is_absolute() else ROOT / args.outdir
+    build_command = [
+        sys.executable,
+        str(builder),
+        "--output", str(data_dir),
+        "--seed", str(args.seed),
+        "--scale", str(args.scale),
+        "--error-rate", str(args.error_rate),
+        "--timeout", str(args.timeout),
+        "--retries", str(args.retries),
+    ]
+    if args.offline:
+        build_command.append("--offline")
+    if args.force:
+        build_command.append("--force")
+    completed = subprocess.run(build_command, cwd=ROOT, check=False)
+    if completed.returncode or args.build_only:
+        return completed.returncode
+
+    metadata = data_dir / "metadata"
+    nextflow_args = [
+        "--taxonomy_crosswalk", str(metadata / "taxonomy_crosswalk.tsv"),
+        "--assay_performance", str(metadata / "assay_performance.tsv"),
+    ]
+    extra = list(args.nextflow_args or [])
+    if extra and extra[0] == "--":
+        extra.pop(0)
+    nextflow_args.extend(extra)
+    run_args = argparse.Namespace(
+        samples=metadata / "samples.tsv",
+        controls=metadata / "control_relationships.tsv",
+        outdir=results_dir,
+        profile=args.profile,
+        resume=args.resume,
+        site_config=args.site_config,
+        work_dir=args.work_dir,
+        nextflow_args=nextflow_args,
+    )
+    run_status = command_run(run_args)
+    if run_status or args.skip_evaluation:
+        return run_status
+    evaluation = subprocess.run(
+        [
+            sys.executable,
+            str(evaluator),
+            "--results", str(results_dir),
+            "--expectations", str(metadata / "expected_outcomes.tsv"),
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+    return evaluation.returncode
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="triarchy", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -369,8 +439,62 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--outdir", type=Path, default=Path("results/study"))
     run_parser.add_argument("--profile", choices=PRODUCTION_PROFILES, default="local")
     run_parser.add_argument("--resume", action="store_true")
+    run_parser.add_argument(
+        "--site-config", type=Path,
+        help="site-specific Nextflow configuration, such as a SLURM account and partition",
+    )
+    run_parser.add_argument(
+        "--work-dir", type=Path,
+        help="shared Nextflow work directory for cluster execution",
+    )
     run_parser.add_argument("nextflow_args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
     run_parser.set_defaults(func=command_run)
+
+    smoke_parser = sub.add_parser(
+        "smoke",
+        help="build and run the real-reference production smoke study",
+    )
+    smoke_parser.add_argument(
+        "--data-dir", type=Path, default=Path("data/production_smoke"),
+        help="generated study directory (default: data/production_smoke)",
+    )
+    smoke_parser.add_argument(
+        "--outdir", type=Path, default=Path("results/production_smoke"),
+        help="production results directory (default: results/production_smoke)",
+    )
+    smoke_parser.add_argument(
+        "--profile", choices=PRODUCTION_PROFILES, default="laptop",
+        help="production execution profile (default: laptop)",
+    )
+    smoke_parser.add_argument("--seed", type=int, default=20260827, help="read-generation seed")
+    smoke_parser.add_argument(
+        "--scale", type=float, default=1.0,
+        help="multiply every designed library size (default: 1.0)",
+    )
+    smoke_parser.add_argument(
+        "--error-rate", type=float, default=.001,
+        help="per-base substitution rate (default: 0.001)",
+    )
+    smoke_parser.add_argument("--timeout", type=int, default=60, help="download connect timeout in seconds")
+    smoke_parser.add_argument("--retries", type=int, default=3, help="download attempts per NCBI endpoint")
+    smoke_parser.add_argument("--offline", action="store_true", help="use only cached NCBI references")
+    smoke_parser.add_argument("--force", action="store_true", help="regenerate an existing fixture")
+    smoke_parser.add_argument("--build-only", action="store_true", help="generate and validate inputs without running Nextflow")
+    smoke_parser.add_argument("--skip-evaluation", action="store_true", help="run Nextflow without checking designed outcomes")
+    smoke_parser.add_argument(
+        "--site-config", type=Path,
+        help="site-specific Nextflow configuration, such as a SLURM account and partition",
+    )
+    smoke_parser.add_argument(
+        "--work-dir", type=Path,
+        help="shared Nextflow work directory for cluster execution",
+    )
+    smoke_parser.add_argument(
+        "--resume", action=argparse.BooleanOptionalAction, default=True,
+        help="resume cached Nextflow tasks (default: enabled)",
+    )
+    smoke_parser.add_argument("nextflow_args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    smoke_parser.set_defaults(func=command_smoke)
 
     validate_parser = sub.add_parser("validate", help="preflight metadata, FASTQs, and optional databases")
     validate_parser.add_argument("--input", "--samples", dest="samples", type=Path, required=True)

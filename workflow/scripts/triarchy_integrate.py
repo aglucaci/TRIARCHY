@@ -69,7 +69,9 @@ def infer_kingdom(row: dict[str, str]) -> str:
     lineage = row.get("canonical_lineage", "").casefold()
     name = row.get("canonical_name", row.get("original_name", "")).casefold()
     if "fung" in lineage or any(
-        token in name for token in ("aspergillus", "candida", "cladospor")
+        token in name for token in (
+            "aspergillus", "candida", "cladospor", "saccharomyces",
+        )
     ):
         return "Fungi"
     if "archaea" in lineage or "methan" in name:
@@ -538,6 +540,7 @@ def cmd_control(args: argparse.Namespace) -> None:
 def cmd_harmonize(args: argparse.Namespace) -> None:
     rows = read_tsv(args.input)
     supplied = {}
+    supplied_by_name = {}
     if args.crosswalk:
         for row in read_tsv(args.crosswalk):
             source_database = row.get("source_database", "")
@@ -546,6 +549,11 @@ def cmd_harmonize(args: argparse.Namespace) -> None:
             )
             if source_database and source_taxon_id:
                 supplied[(source_database, source_taxon_id)] = row
+            source_name = row.get("source_name", row.get("original_name", ""))
+            if source_database and source_name:
+                supplied_by_name[
+                    (source_database, normalized_taxon_name(source_name).casefold())
+                ] = row
     generated = {}
     harmonized = []
     for row in rows:
@@ -568,7 +576,9 @@ def cmd_harmonize(args: argparse.Namespace) -> None:
             "database_coverage": "",
             "reference_status": "unrecorded",
         }
-        override = supplied.get((row["assay"], row["feature_id"]))
+        override = supplied.get((row["assay"], row["feature_id"])) or supplied_by_name.get(
+            (row["assay"], key)
+        )
         if override:
             mapping.update(override)
             mapping["triarchy_taxon_id"] = override.get(

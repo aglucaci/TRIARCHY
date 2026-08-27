@@ -300,6 +300,10 @@ ENV_PREFIX="$(
 )"
 [[ -x "${ENV_PREFIX}/bin/python3" ]] ||
     die "named environment ${ENV_NAME} is missing; run: mamba env create --file environment.yml"
+for required_tool in cutadapt itsxpress vsearch Rscript; do
+    [[ -x "${ENV_PREFIX}/bin/${required_tool}" ]] ||
+        die "${required_tool} is missing from ${ENV_NAME}; rerun the installer without --skip-dependencies"
+done
 ln -sfn "${SCRIPT_DIR}/triarchy" "${ENV_PREFIX}/bin/triarchy"
 "${environment_manager}" list --name "${ENV_NAME}" --explicit >"${environment_lock}"
 
