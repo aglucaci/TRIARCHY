@@ -845,7 +845,6 @@ params {
     humann_protein_db = '${humann_protein}'
     metaphlan_db = '${metaphlan_db_dir}'
     metaphlan_index = '${metaphlan_index}'
-    humann_bypass_prescreen = false
     s16_taxonomy = '${silva_fasta}'
     its_taxonomy = '${its_fasta}'
 }

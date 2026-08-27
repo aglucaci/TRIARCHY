@@ -80,7 +80,9 @@ process WGS_TAXONOMY {
     def reads = layout == 'paired' ?
         "--paired '${clean_dir}/R1.fastq.gz' '${clean_dir}/R2.fastq.gz'" :
         "'${clean_dir}/R1.fastq.gz'"
-    def memoryMappingArg = params.kraken2_memory_mapping ? '--memory-mapping' : ''
+    def memoryMappingEnabled =
+        params.kraken2_memory_mapping?.toString()?.toBoolean() ?: false
+    def memoryMappingArg = memoryMappingEnabled ? '--memory-mapping' : ''
     """
     command -v kraken2 >/dev/null || { echo 'kraken2 is required' >&2; exit 127; }
     command -v bracken >/dev/null || { echo 'bracken is required' >&2; exit 127; }
@@ -122,14 +124,13 @@ process WGS_FUNCTIONS {
         file(params.humann_protein_db, checkIfExists: true) : null
     def metaphlanDb = params.metaphlan_db ?
         file(params.metaphlan_db, checkIfExists: true) : null
-    if (!params.humann_bypass_prescreen && (!metaphlanDb || !params.metaphlan_index)) {
+    if (!metaphlanDb || !params.metaphlan_index) {
         error "Production HUMAnN execution requires --metaphlan_db and --metaphlan_index"
     }
     def nucleotideArg = humannDb ? "--nucleotide-database '${humannDb}'" : ''
     def proteinArg = humannProteinDb ? "--protein-database '${humannProteinDb}'" : ''
-    def prescreenArg = params.humann_bypass_prescreen ? '--bypass-prescreen' : ''
-    def metaphlanArg = metaphlanDb ?
-        "--metaphlan-options '-t rel_ab --db_dir ${metaphlanDb} -x ${params.metaphlan_index} --offline'" : ''
+    def metaphlanArg =
+        "--metaphlan-options '-t rel_ab --db_dir ${metaphlanDb} -x ${params.metaphlan_index} --offline'"
     """
     command -v humann >/dev/null || { echo 'humann is required' >&2; exit 127; }
     metaphlan_real="\$(command -v metaphlan)" || { echo 'metaphlan is required by HUMAnN' >&2; exit 127; }
@@ -141,7 +142,7 @@ process WGS_FUNCTIONS {
     ${prep}
     humann --input '${library_id}.functions/combined.fastq.gz' \
         --output '${library_id}.functions/humann' \
-        --threads ${task.cpus} ${nucleotideArg} ${proteinArg} ${prescreenArg} ${metaphlanArg}
+        --threads ${task.cpus} ${nucleotideArg} ${proteinArg} ${metaphlanArg}
     python3 ${projectDir}/workflow/scripts/triarchy_integrate.py standardize-humann \
         --library-id '${library_id}' \
         --input-dir '${library_id}.functions/humann' \
