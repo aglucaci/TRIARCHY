@@ -19,4 +19,21 @@ if [[ "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then
     exit "${status}"
 fi
 
-exec "${TRIARCHY_METAPHLAN_REAL}" "$@"
+# HUMAnN 3.9 calls the legacy MetaPhlAn --bowtie2out option. MetaPhlAn
+# 4.2.5 renamed it to --mapout and no longer accepts the old spelling.
+translated_args=()
+for argument in "$@"; do
+    case "${argument}" in
+        --bowtie2out)
+            translated_args+=(--mapout)
+            ;;
+        --bowtie2out=*)
+            translated_args+=("--mapout=${argument#--bowtie2out=}")
+            ;;
+        *)
+            translated_args+=("${argument}")
+            ;;
+    esac
+done
+
+exec "${TRIARCHY_METAPHLAN_REAL}" "${translated_args[@]}"
