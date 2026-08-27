@@ -47,6 +47,7 @@ Useful installer options:
 | Option | Meaning |
 | --- | --- |
 | `--database-dir DIR` | Production reference destination |
+| `--silva-archive FILE` | Install a pre-existing, checksum-verified SILVA archive |
 | `--kraken-archive FILE` | Reuse an existing full PlusPFP archive |
 | `--cpus N` | Installation/indexing threads |
 | `--locked-dependencies` | Install the pinned dependency lock |
@@ -54,6 +55,14 @@ Useful installer options:
 | `--skip-dependencies` | Keep the existing `TRIARCHY` environment |
 | `--skip-databases` | Keep the current production references |
 | `--yes` | Accept the large non-interactive installation |
+
+SILVA downloads are automatic and mirror-aware. TRIARCHY tries the official
+SILVA release server first and then a checksum-identical Zenodo mirror. Each
+source has its own resumable partial download, unreachable sources fail over
+automatically, and the completed archive must match MD5
+`41f1d231ce5079b88f4c01742c288ba9`. Existing installations of the earlier
+full-length DADA2 artifact remain accepted by their pinned checksum. The
+optional `--silva-archive` input is only needed for fully air-gapped systems.
 
 ## Production inputs
 

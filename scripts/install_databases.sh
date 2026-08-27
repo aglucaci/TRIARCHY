@@ -8,6 +8,7 @@ ENV_PREFIX="${PROJECT_DIR}/.tools/env"
 CPUS="${TRIARCHY_INSTALL_CPUS:-4}"
 readonly PROFILE="standard"
 KRAKEN_ARCHIVE=""
+SILVA_ARCHIVE=""
 ASSUME_YES=false
 CURRENT_STEP=0
 TOTAL_STEPS=0
@@ -44,6 +45,7 @@ Options:
   --database-dir DIR   Destination (default: references/data)
   --env-prefix DIR     Dependency environment (default: .tools/env)
   --cpus N             Build threads (default: 4)
+  --silva-archive FILE Use an existing SILVA 138.2 DADA2 .fa.gz archive
   --kraken-archive FILE
                        Use an existing PlusPFP .tar.gz instead of downloading
   --yes                Accept the large download without prompting
@@ -53,13 +55,14 @@ The installer provisions the full host, SILVA, ITS, HUMAnN ChocoPhlAn/UniRef90,
 and Kraken2 PlusPFP/Bracken production references.
 
 Overrides:
-  TRIARCHY_SILVA_URL   DADA2-compatible SILVA archive
+  TRIARCHY_SILVA_URL   Additional checksum-identical SILVA mirror
   TRIARCHY_ITS_URL     DADA2-compatible ITS taxonomy archive
   TRIARCHY_HUMAN_ACCESSION  NCBI assembly accession
   TRIARCHY_KRAKEN_URL  Prebuilt Kraken2 archive URL
   TRIARCHY_KRAKEN_MD5_URL  Prebuilt Kraken2 checksum-manifest URL
   TRIARCHY_KRAKEN_SIZE  Expected archive size in bytes
   TRIARCHY_DOWNLOAD_ATTEMPTS  Retry attempts per download stage (default: 20)
+  TRIARCHY_MIRROR_ATTEMPTS  Retry attempts per SILVA mirror (default: 3)
   NO_COLOR             Disable ANSI colors
 EOF
 }
@@ -252,6 +255,11 @@ while (($#)); do
             CPUS="$2"
             shift 2
             ;;
+        --silva-archive)
+            (($# >= 2)) || die "--silva-archive requires a file"
+            SILVA_ARCHIVE="$2"
+            shift 2
+            ;;
         --kraken-archive)
             (($# >= 2)) || die "--kraken-archive requires a file"
             KRAKEN_ARCHIVE="$2"
@@ -393,6 +401,74 @@ download() {
     mv "${partial}" "${destination}"
 }
 
+VERIFIED_DOWNLOAD_SOURCE=""
+download_verified_md5() {
+    local destination="$1"
+    local expected_md5="$2"
+    shift 2
+    local mirror_count="$#"
+    local mirror_index=0
+    local url
+    local partial
+    local source_marker
+    local partial_source
+    local actual_md5
+
+    ((mirror_count > 0)) || die "no download mirrors configured for ${destination}"
+
+    # Older TRIARCHY releases used one unlabelled partial. It belongs to a
+    # different SILVA artifact and must not be combined with the new mirrors.
+    if [[ -e "${destination}.part" ]]; then
+        warning "Discarding an unverified partial from the legacy downloader"
+        rm -f -- "${destination}.part"
+    fi
+
+    for url in "$@"; do
+        mirror_index=$((mirror_index + 1))
+        partial="${destination}.part.${mirror_index}"
+        source_marker="${partial}.url"
+        partial_source=""
+        if [[ -s "${source_marker}" ]]; then
+            partial_source="$(head -n 1 "${source_marker}")"
+        fi
+        if [[ -e "${partial}" && "${partial_source}" != "${url}" ]]; then
+            warning "Resetting partial data because mirror ${mirror_index} changed"
+            rm -f -- "${partial}" "${source_marker}"
+        fi
+        printf '%s\n' "${url}" >"${source_marker}"
+
+        info "Downloading mirror ${mirror_index}/${mirror_count}: ${url}"
+        if curl \
+            --fail \
+            --location \
+            --http1.1 \
+            --retry "${TRIARCHY_MIRROR_ATTEMPTS:-3}" \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --connect-timeout 20 \
+            --speed-limit 1024 \
+            --speed-time 120 \
+            --continue-at - \
+            --output "${partial}" \
+            "${url}"; then
+            actual_md5="$(md5sum "${partial}" | awk '{print $1}')"
+            if [[ "${actual_md5}" == "${expected_md5}" ]]; then
+                mv "${partial}" "${destination}"
+                rm -f -- "${source_marker}"
+                VERIFIED_DOWNLOAD_SOURCE="${url}"
+                success "Verified $(basename "${destination}") from mirror ${mirror_index}"
+                return 0
+            fi
+            warning "Mirror ${mirror_index} returned checksum ${actual_md5}; expected ${expected_md5}"
+            rm -f -- "${partial}" "${source_marker}"
+        else
+            warning "Mirror ${mirror_index}/${mirror_count} is unavailable; trying the next source"
+        fi
+    done
+
+    die "all ${mirror_count} verified mirrors failed for $(basename "${destination}")"
+}
+
 bowtie_index_complete() {
     local index_base="$1"
     local extension
@@ -458,25 +534,50 @@ else
 fi
 record host "${human_accession}" "${human_source}" "${human_fasta}"
 
-silva_url="${TRIARCHY_SILVA_URL:-https://zenodo.org/records/14169026/files/silva_nr99_v138.2_toGenus_trainset.fa.gz?download=1}"
+silva_primary_url="https://ftp.arb-silva.de/release_138.2/DADA2/1.36.0/SSU/silva_nr99_v138.2_toGenus_trainset.fa.gz"
+silva_mirror_url="https://zenodo.org/records/20955974/files/silva_nr99_v138.2_toGenus_trainset.fa.gz?download=1"
+silva_urls=()
+if [[ -n "${TRIARCHY_SILVA_URL:-}" ]]; then
+    silva_urls+=("${TRIARCHY_SILVA_URL}")
+fi
+silva_urls+=("${silva_primary_url}" "${silva_mirror_url}")
 silva_fasta="${DATABASE_DIR}/silva/silva_nr99_v138.2_toGenus_trainset.fa.gz"
+silva_expected_md5="41f1d231ce5079b88f4c01742c288ba9"
+silva_legacy_md5="1764e2a36b4500ccb1c7d5261948a414"
+silva_source="validated existing SILVA 138.2 artifact"
 silva_md5=""
+if [[ -n "${SILVA_ARCHIVE}" ]]; then
+    [[ -f "${SILVA_ARCHIVE}" ]] ||
+        die "SILVA archive does not exist: ${SILVA_ARCHIVE}"
+    SILVA_ARCHIVE="$(cd -- "$(dirname -- "${SILVA_ARCHIVE}")" && pwd -P)/$(basename -- "${SILVA_ARCHIVE}")"
+    silva_source="${SILVA_ARCHIVE}"
+fi
 if [[ -s "${silva_fasta}" ]]; then
     silva_md5="$(md5sum "${silva_fasta}" | awk '{print $1}')"
 fi
-if [[ "${silva_md5}" == "1764e2a36b4500ccb1c7d5261948a414" ]]; then
+if [[ "${silva_md5}" == "${silva_expected_md5}" || "${silva_md5}" == "${silva_legacy_md5}" ]]; then
     stage_skip silva_taxonomy "SILVA 138.2 DADA2 taxonomy"
 else
     [[ -e "${silva_fasta}" ]] &&
         die "Existing SILVA file failed validation: ${silva_fasta}"
     stage_begin silva_taxonomy "SILVA 138.2 DADA2 taxonomy"
-    download "${silva_url}" "${silva_fasta}"
+    if [[ -n "${SILVA_ARCHIVE}" ]]; then
+        silva_archive_md5="$(md5sum "${SILVA_ARCHIVE}" | awk '{print $1}')"
+        [[ "${silva_archive_md5}" == "${silva_expected_md5}" || "${silva_archive_md5}" == "${silva_legacy_md5}" ]] ||
+            die "SILVA archive checksum mismatch: ${silva_archive_md5}"
+        info "Installing verified SILVA archive from ${SILVA_ARCHIVE}"
+        cp "${SILVA_ARCHIVE}" "${silva_fasta}.part"
+        mv "${silva_fasta}.part" "${silva_fasta}"
+    else
+        download_verified_md5 "${silva_fasta}" "${silva_expected_md5}" "${silva_urls[@]}"
+        silva_source="${VERIFIED_DOWNLOAD_SOURCE}"
+    fi
     silva_md5="$(md5sum "${silva_fasta}" | awk '{print $1}')"
-    [[ "${silva_md5}" == "1764e2a36b4500ccb1c7d5261948a414" ]] ||
+    [[ "${silva_md5}" == "${silva_expected_md5}" || "${silva_md5}" == "${silva_legacy_md5}" ]] ||
         die "SILVA checksum mismatch: ${silva_md5}"
     stage_complete
 fi
-record silva "138.2" "${silva_url}" "${silva_fasta}"
+record silva "138.2" "${silva_source}" "${silva_fasta}"
 
 its_url="${TRIARCHY_ITS_URL:-https://sisu.ut.ee/wp-content/uploads/sites/643/DADA2_EUK_ITS_99_v2.0.zip}"
 its_zip="${DATABASE_DIR}/downloads/DADA2_EUK_ITS_99_v2.0.zip"

@@ -11,6 +11,7 @@ ENV_PREFIX=""
 DATABASE_DIR="${SCRIPT_DIR}/references/data"
 DATABASE_DIR_EXPLICIT=false
 KRAKEN_ARCHIVE=""
+SILVA_ARCHIVE=""
 INSTALL_CPUS=4
 ENVIRONMENT_MANAGER="${TRIARCHY_ENV_MANAGER:-mamba}"
 SKIP_NEXTFLOW=false
@@ -46,6 +47,7 @@ Options:
                         mamba, micromamba, conda, or auto (default: mamba)
   --database-dir DIR    Reference destination (default: last successful location,
                         otherwise references/data)
+  --silva-archive FILE  Use an existing SILVA 138.2 DADA2 .fa.gz archive
   --kraken-archive FILE Use an existing PlusPFP .tar.gz instead of downloading
   --cpus N              Threads for the locally built host index (default: 4)
   --skip-nextflow       Do not download or validate Nextflow
@@ -107,6 +109,11 @@ while (($#)); do
             (($# >= 2)) || die "--database-dir requires a directory"
             DATABASE_DIR="$2"
             DATABASE_DIR_EXPLICIT=true
+            shift 2
+            ;;
+        --silva-archive)
+            (($# >= 2)) || die "--silva-archive requires a file"
+            SILVA_ARCHIVE="$2"
             shift 2
             ;;
         --kraken-archive)
@@ -314,6 +321,9 @@ if [[ "${SKIP_DATABASES}" == false ]]; then
     )
     if [[ "${ASSUME_YES}" == true ]]; then
         database_args+=(--yes)
+    fi
+    if [[ -n "${SILVA_ARCHIVE}" ]]; then
+        database_args+=(--silva-archive "${SILVA_ARCHIVE}")
     fi
     if [[ -n "${KRAKEN_ARCHIVE}" ]]; then
         database_args+=(--kraken-archive "${KRAKEN_ARCHIVE}")
