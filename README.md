@@ -107,6 +107,12 @@ production reference profile does not install a separate MetaPhlAn marker
 database, HUMAnN runs with its supported `--bypass-prescreen` mode and searches
 the installed full ChocoPhlAn database directly.
 
+The full Kraken2 PlusPFP database is larger than the 96 GB production job
+request. TRIARCHY therefore enables Kraken2's supported `--memory-mapping` mode
+and limits WMS taxonomy to two concurrent jobs on SLURM. Place the database on
+fast parallel or node-local storage when possible; memory-mapped classification
+trades lower process memory for additional storage I/O.
+
 ## Production demo
 
 TRIARCHY includes a deterministic production demonstration built from

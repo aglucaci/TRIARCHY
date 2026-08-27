@@ -80,11 +80,12 @@ process WGS_TAXONOMY {
     def reads = layout == 'paired' ?
         "--paired '${clean_dir}/R1.fastq.gz' '${clean_dir}/R2.fastq.gz'" :
         "'${clean_dir}/R1.fastq.gz'"
+    def memoryMappingArg = params.kraken2_memory_mapping ? '--memory-mapping' : ''
     """
     command -v kraken2 >/dev/null || { echo 'kraken2 is required' >&2; exit 127; }
     command -v bracken >/dev/null || { echo 'bracken is required' >&2; exit 127; }
     mkdir -p '${library_id}.taxonomy'
-    kraken2 --db '${krakenDb}' ${reads} \
+    kraken2 --db '${krakenDb}' ${memoryMappingArg} ${reads} \
         --threads ${task.cpus} \
         --report '${library_id}.taxonomy/kraken2.report' \
         --output '${library_id}.taxonomy/kraken2.output'

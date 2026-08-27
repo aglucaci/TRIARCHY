@@ -765,6 +765,7 @@ cat >"${config_work}" <<EOF
 params {
     host_index = '${host_index_base}'
     kraken2_db = '${kraken_db_dir}'
+    kraken2_memory_mapping = true
     humann_db = '${humann_nucleotide}'
     humann_protein_db = '${humann_protein}'
     humann_bypass_prescreen = ${humann_bypass_prescreen}

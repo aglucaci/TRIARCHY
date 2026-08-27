@@ -398,6 +398,7 @@ def command_demo(args: argparse.Namespace) -> int:
     nextflow_args = [
         "--taxonomy_crosswalk", str(metadata / "taxonomy_crosswalk.tsv"),
         "--assay_performance", str(metadata / "assay_performance.tsv"),
+        "--kraken2_memory_mapping", "true",
         "--humann_bypass_prescreen", "true",
     ]
     extra = list(args.nextflow_args or [])
