@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${TRIARCHY_METAPHLAN_REAL:-}" ]]; then
+    printf 'TRIARCHY_METAPHLAN_REAL is not set\n' >&2
+    exit 127
+fi
+
+# HUMAnN 3.9 expects MetaPhlAn --version to contain one non-empty line.
+# MetaPhlAn 4.2.5 also reports installed databases, which makes HUMAnN parse
+# the database name as the executable version. Keep normal executions intact
+# while presenting HUMAnN with the version format it supports.
+if [[ "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then
+    set +e
+    version_output="$("${TRIARCHY_METAPHLAN_REAL}" "$@" 2>&1)"
+    status=$?
+    set -e
+    printf '%s\n' "${version_output}" | sed -n '1p'
+    exit "${status}"
+fi
+
+exec "${TRIARCHY_METAPHLAN_REAL}" "$@"

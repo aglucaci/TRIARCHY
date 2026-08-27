@@ -51,8 +51,8 @@ Options:
   --yes                Accept the large download without prompting
   -h, --help           Show this help
 
-The installer provisions the full host, SILVA, ITS, HUMAnN ChocoPhlAn/UniRef90,
-and Kraken2 PlusPFP/Bracken production references.
+The installer provisions the full host, SILVA, ITS, MetaPhlAn,
+HUMAnN ChocoPhlAn/UniRef90, and Kraken2 PlusPFP/Bracken production references.
 
 Overrides:
   TRIARCHY_SILVA_URL   Additional checksum-identical SILVA mirror
@@ -295,8 +295,8 @@ if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
 else
     export PATH="${ENV_PREFIX}/bin:${PATH}"
 fi
-for command in datasets bowtie2-build \
-    humann_databases curl gzip unzip 7z sha256sum tar; do
+for command in datasets bowtie2-build bowtie2-inspect \
+    humann_databases metaphlan curl gzip unzip 7z sha256sum tar; do
     command -v "${command}" >/dev/null 2>&1 ||
         die "required dependency not found: ${command}"
 done
@@ -309,17 +309,17 @@ if [[ "${PROFILE}" == "standard" && "${ASSUME_YES}" == false ]]; then
         die "standard databases require substantial disk and network use; rerun with --yes"
     fi
     printf '%s\n' \
-        "The standard reference installation can exceed 400 GB and take many hours." \
+        "The standard reference installation can exceed 500 GB and take many hours." \
         "It downloads the prebuilt Kraken2 PlusPFP/Bracken database and other third-party data."
     read -r -p "Continue? [y/N] " answer
     [[ "${answer}" =~ ^[Yy]$ ]] || die "database installation cancelled"
 fi
 
-mkdir -p "${DATABASE_DIR}"/{downloads,host,kraken2,humann,silva,its}
+mkdir -p "${DATABASE_DIR}"/{downloads,host,kraken2,metaphlan,humann,silva,its}
 DATABASE_DIR="$(cd -- "${DATABASE_DIR}" && pwd -P)"
 kraken_db_dir="${DATABASE_DIR}/kraken2"
 mkdir -p "${kraken_db_dir}"
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 CHECKPOINT_DIR="${DATABASE_DIR}/.triarchy-install/checkpoints/${PROFILE}"
 mkdir -p "${CHECKPOINT_DIR}"
 readonly CHECKPOINT_DIR
@@ -345,7 +345,7 @@ checkpoint_count="$(
 info "Checkpoint receipts found: ${checkpoint_count}; outputs will be revalidated"
 
 if [[ "${PROFILE}" == "standard" ]]; then
-    minimum_free_gb="${TRIARCHY_MIN_FREE_GB:-450}"
+    minimum_free_gb="${TRIARCHY_MIN_FREE_GB:-600}"
     available_kb="$(df -Pk "${DATABASE_DIR}" | awk 'NR == 2 { print $4 }')"
     required_kb=$((minimum_free_gb * 1024 * 1024))
     if ((available_kb < required_kb)) &&
@@ -400,6 +400,31 @@ download() {
         --connect-timeout 60 \
         --continue-at - --output "${partial}" "${url}"
     mv "${partial}" "${destination}"
+}
+
+download_pinned_md5() {
+    local url="$1"
+    local destination="$2"
+    local expected_md5="$3"
+    local actual_md5=""
+
+    if [[ -s "${destination}" ]]; then
+        actual_md5="$(md5sum "${destination}" | awk '{print $1}')"
+        if [[ "${actual_md5}" == "${expected_md5}" ]]; then
+            info "Using verified $(basename "${destination}")"
+            return 0
+        fi
+        warning "Discarding corrupt $(basename "${destination}") (checksum ${actual_md5})"
+        rm -f -- "${destination}" "${destination}.part"
+    fi
+
+    download "${url}" "${destination}"
+    actual_md5="$(md5sum "${destination}" | awk '{print $1}')"
+    if [[ "${actual_md5}" != "${expected_md5}" ]]; then
+        rm -f -- "${destination}" "${destination}.part"
+        die "checksum mismatch for $(basename "${destination}"): ${actual_md5}"
+    fi
+    success "Verified $(basename "${destination}")"
 }
 
 VERIFIED_DOWNLOAD_SOURCE=""
@@ -708,6 +733,41 @@ kraken_prebuilt_complete() {
         stage_complete
     fi
 
+metaphlan_index="mpa_vJun23_CHOCOPhlAnSGB_202307"
+metaphlan_db_dir="${DATABASE_DIR}/metaphlan"
+metaphlan_base_url="https://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases"
+metaphlan_main_url="${metaphlan_base_url}/${metaphlan_index}.tar"
+metaphlan_bt2_url="${metaphlan_base_url}/bowtie2_indexes/${metaphlan_index}_bt2.tar"
+metaphlan_main_archive="${DATABASE_DIR}/downloads/${metaphlan_index}.tar"
+metaphlan_bt2_archive="${DATABASE_DIR}/downloads/${metaphlan_index}_bt2.tar"
+metaphlan_main_md5="f883708ea3c26b59d5f3410b72256bb2"
+metaphlan_bt2_md5="d306a65273bb9b00ab6977c1e264cdfc"
+
+metaphlan_database_complete() {
+    [[ -s "${metaphlan_db_dir}/${metaphlan_index}.pkl" ]] &&
+        bowtie_index_complete "${metaphlan_db_dir}/${metaphlan_index}" &&
+        bowtie2-inspect -n "${metaphlan_db_dir}/${metaphlan_index}" >/dev/null 2>&1
+}
+
+if metaphlan_database_complete; then
+    stage_skip metaphlan_markers \
+        "MetaPhlAn ${metaphlan_index} marker database"
+else
+    stage_begin metaphlan_markers \
+        "MetaPhlAn ${metaphlan_index} marker database"
+    download_pinned_md5 \
+        "${metaphlan_main_url}" "${metaphlan_main_archive}" "${metaphlan_main_md5}"
+    download_pinned_md5 \
+        "${metaphlan_bt2_url}" "${metaphlan_bt2_archive}" "${metaphlan_bt2_md5}"
+    info "Extracting verified MetaPhlAn database archives"
+    tar -xf "${metaphlan_bt2_archive}" -C "${metaphlan_db_dir}"
+    tar -xf "${metaphlan_main_archive}" -C "${metaphlan_db_dir}"
+    metaphlan_database_complete ||
+        die "MetaPhlAn archives did not produce a complete usable database"
+    printf '%s\n' "${metaphlan_index}" >"${metaphlan_db_dir}/mpa_latest"
+    stage_complete
+fi
+
     humann_chocophlan_file="$(
         find "${DATABASE_DIR}/humann" -type f -name '*.ffn.gz' \
             -size +0c -print -quit
@@ -754,13 +814,10 @@ humann_protein="$(dirname -- "${humann_uniref_file}")"
         "${kraken_db_dir}"
 record humann_chocophlan "${PROFILE}" "humann_databases" "${humann_nucleotide}"
 record humann_uniref "${PROFILE}" "humann_databases" "${humann_protein}"
+record metaphlan "${metaphlan_index}" "${metaphlan_base_url}" "${metaphlan_db_dir}"
 
 config="${PROJECT_DIR}/conf/references.config"
 config_work="${CHECKPOINT_DIR}/references.config.partial"
-# TRIARCHY supplies Kraken2/Bracken for taxonomy but does not provision a
-# MetaPhlAn marker database. HUMAnN therefore searches the installed full
-# ChocoPhlAn database directly instead of invoking an unusable prescreen.
-humann_bypass_prescreen=true
 cat >"${config_work}" <<EOF
 params {
     host_index = '${host_index_base}'
@@ -768,7 +825,9 @@ params {
     kraken2_memory_mapping = true
     humann_db = '${humann_nucleotide}'
     humann_protein_db = '${humann_protein}'
-    humann_bypass_prescreen = ${humann_bypass_prescreen}
+    metaphlan_db = '${metaphlan_db_dir}'
+    metaphlan_index = '${metaphlan_index}'
+    humann_bypass_prescreen = false
     s16_taxonomy = '${silva_fasta}'
     its_taxonomy = '${its_fasta}'
 }

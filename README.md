@@ -17,7 +17,7 @@ conclusion. This repository supports production execution only.
 - Bash and Java 17 or later
 - Mamba, Micromamba, or Conda
 - Nextflow (the pinned version is installed locally)
-- Production reference storage; the complete reference set can exceed 400 GB
+- Production reference storage; the complete reference set can exceed 500 GB
 - Real WGS, 16S, and ITS FASTQs with study-specific primer information
 
 Apple-silicon macOS production installs use native tool shims where required.
@@ -26,15 +26,15 @@ than a memory-constrained laptop.
 
 ## Minimum production specifications
 
-For a complete production run using the full Kraken2 PlusPFP, HUMAnN, host,
-SILVA, and ITS reference set, provision at least:
+For a complete production run using the full Kraken2 PlusPFP, MetaPhlAn,
+HUMAnN, host, SILVA, and ITS reference set, provision at least:
 
 | Resource | Minimum production specification |
 | --- | --- |
 | Largest compute-job slot | 12 CPU cores |
 | Memory per high-resource job | 96 GB RAM |
 | Maximum job wall time | 48 hours |
-| Free space for reference installation | 450 GB |
+| Free space for reference installation | 600 GB |
 | Recommended shared storage | 1 TB or more |
 | GPU | Not required |
 
@@ -53,7 +53,7 @@ work directory must be on shared POSIX storage visible at identical paths from
 the login and compute nodes. Internet access is needed during database
 installation unless the validated archives are supplied locally.
 
-The database installer enforces 450 GB of free space for a new reference
+The database installer enforces 600 GB of free space for a new reference
 installation. Production work files and results require additional capacity;
 1 TB of shared storage is a practical starting point, with more space needed
 for large input studies. Nodes with 128 GB RAM are recommended to leave
@@ -102,10 +102,12 @@ full-length DADA2 artifact remain accepted by their pinned checksum. The
 optional `--silva-archive` input is only needed for fully air-gapped systems.
 
 TRIARCHY uses Kraken2/Bracken for WMS taxonomy and installs the complete HUMAnN
-ChocoPhlAn and UniRef90 databases for functional profiling. Because the
-production reference profile does not install a separate MetaPhlAn marker
-database, HUMAnN runs with its supported `--bypass-prescreen` mode and searches
-the installed full ChocoPhlAn database directly.
+ChocoPhlAn and UniRef90 databases for functional profiling. It also installs
+the checksum-pinned `mpa_vJun23_CHOCOPhlAnSGB_202307` MetaPhlAn marker database
+required by HUMAnN 3.9. HUMAnN prescreens against this shared index before
+constructing a small sample-specific ChocoPhlAn search database. The database
+path and release are passed explicitly with offline lookup enabled, so compute
+nodes do not need internet access and do not build the full ChocoPhlAn index.
 
 The full Kraken2 PlusPFP database is larger than the 96 GB production job
 request. TRIARCHY therefore enables Kraken2's supported `--memory-mapping` mode

@@ -120,18 +120,28 @@ process WGS_FUNCTIONS {
         file(params.humann_db, checkIfExists: true) : null
     def humannProteinDb = params.humann_protein_db ?
         file(params.humann_protein_db, checkIfExists: true) : null
+    def metaphlanDb = params.metaphlan_db ?
+        file(params.metaphlan_db, checkIfExists: true) : null
+    if (!params.humann_bypass_prescreen && (!metaphlanDb || !params.metaphlan_index)) {
+        error "Production HUMAnN execution requires --metaphlan_db and --metaphlan_index"
+    }
     def nucleotideArg = humannDb ? "--nucleotide-database '${humannDb}'" : ''
     def proteinArg = humannProteinDb ? "--protein-database '${humannProteinDb}'" : ''
     def prescreenArg = params.humann_bypass_prescreen ? '--bypass-prescreen' : ''
+    def metaphlanArg = metaphlanDb ?
+        "--metaphlan-options '-t rel_ab --db_dir ${metaphlanDb} -x ${params.metaphlan_index} --offline'" : ''
     """
     command -v humann >/dev/null || { echo 'humann is required' >&2; exit 127; }
+    metaphlan_real="\$(command -v metaphlan)" || { echo 'metaphlan is required by HUMAnN' >&2; exit 127; }
     command -v diamond >/dev/null || { echo 'diamond is required by HUMAnN' >&2; exit 127; }
     diamond version >/dev/null || { echo 'diamond is installed but cannot execute on this platform' >&2; exit 126; }
+    export TRIARCHY_METAPHLAN_REAL="\${metaphlan_real}"
+    export PATH="${projectDir}/workflow/bin:\${PATH}"
     mkdir -p '${library_id}.functions'
     ${prep}
     humann --input '${library_id}.functions/combined.fastq.gz' \
         --output '${library_id}.functions/humann' \
-        --threads ${task.cpus} ${nucleotideArg} ${proteinArg} ${prescreenArg}
+        --threads ${task.cpus} ${nucleotideArg} ${proteinArg} ${prescreenArg} ${metaphlanArg}
     python3 ${projectDir}/workflow/scripts/triarchy_integrate.py standardize-humann \
         --library-id '${library_id}' \
         --input-dir '${library_id}.functions/humann' \
