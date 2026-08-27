@@ -295,7 +295,7 @@ if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
 else
     export PATH="${ENV_PREFIX}/bin:${PATH}"
 fi
-for command in datasets bowtie2-build bowtie2-inspect \
+for command in datasets bowtie2-build \
     humann_databases metaphlan curl gzip unzip 7z sha256sum tar; do
     command -v "${command}" >/dev/null 2>&1 ||
         die "required dependency not found: ${command}"
@@ -744,9 +744,27 @@ metaphlan_main_md5="f883708ea3c26b59d5f3410b72256bb2"
 metaphlan_bt2_md5="d306a65273bb9b00ab6977c1e264cdfc"
 
 metaphlan_database_complete() {
-    [[ -s "${metaphlan_db_dir}/${metaphlan_index}.pkl" ]] &&
-        bowtie_index_complete "${metaphlan_db_dir}/${metaphlan_index}" &&
-        bowtie2-inspect -n "${metaphlan_db_dir}/${metaphlan_index}" >/dev/null 2>&1
+    local index_base="${metaphlan_db_dir}/${metaphlan_index}"
+    local extension=""
+    local forward_size
+    local reverse_size
+    local size_difference
+
+    [[ -s "${metaphlan_db_dir}/${metaphlan_index}.pkl" ]] || return 1
+    bowtie_index_complete "${index_base}" || return 1
+    if [[ -s "${index_base}.1.bt2l" ]]; then
+        extension="bt2l"
+    else
+        extension="bt2"
+    fi
+    forward_size="$(wc -c <"${index_base}.1.${extension}" | tr -d '[:space:]')"
+    reverse_size="$(wc -c <"${index_base}.rev.1.${extension}" | tr -d '[:space:]')"
+    if ((forward_size >= reverse_size)); then
+        size_difference=$((forward_size - reverse_size))
+    else
+        size_difference=$((reverse_size - forward_size))
+    fi
+    ((size_difference <= 1000))
 }
 
 if metaphlan_database_complete; then
