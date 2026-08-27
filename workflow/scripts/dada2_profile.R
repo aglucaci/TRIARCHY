@@ -35,6 +35,60 @@ if (!requireNamespace("dada2", quietly = TRUE)) {
   stop("The R package 'dada2' is required")
 }
 
+valid_error_matrix <- function(matrix) {
+  is.matrix(matrix) && nrow(matrix) == 16 && ncol(matrix) > 0 &&
+    all(is.finite(matrix)) && all(matrix >= 0) && all(matrix <= 1)
+}
+
+learn_error_model <- function(path, direction) {
+  messages <- character()
+  learned <- withCallingHandlers(
+    tryCatch(
+      dada2::learnErrors(path, multithread = TRUE),
+      error = function(error) {
+        messages <<- c(messages, conditionMessage(error))
+        NULL
+      }
+    ),
+    warning = function(warning) {
+      messages <<- c(messages, conditionMessage(warning))
+      invokeRestart("muffleWarning")
+    }
+  )
+  if (valid_error_matrix(learned)) {
+    return(list(
+      error_matrix = learned,
+      method = "learned_per_library",
+      reason = ""
+    ))
+  }
+
+  fallback <- if (direction == "forward") {
+    dada2::errBalancedF
+  } else {
+    dada2::errBalancedR
+  }
+  if (!valid_error_matrix(fallback)) {
+    stop("DADA2 supplied neither a learned nor a valid bundled error matrix")
+  }
+  reason <- paste(unique(messages[nzchar(messages)]), collapse = "; ")
+  if (!nzchar(reason)) {
+    reason <- "learnErrors returned no valid error matrix"
+  }
+  warning(
+    sprintf(
+      "%s reads could not support a per-library error fit; using DADA2's bundled MiSeq 2x250 empirical %s matrix (%s)",
+      direction, direction, reason
+    ),
+    call. = FALSE
+  )
+  list(
+    error_matrix = fallback,
+    method = paste0("dada2_errBalanced", if (direction == "forward") "F" else "R"),
+    reason = reason
+  )
+}
+
 filtered_r1 <- file.path(outdir, "filtered_R1.fastq.gz")
 filtered_r2 <- file.path(outdir, "filtered_R2.fastq.gz")
 
@@ -44,24 +98,47 @@ if (layout == "paired") {
     maxN = 0, maxEE = c(2, 2), truncQ = 2,
     rm.phix = TRUE, compress = TRUE, multithread = TRUE
   )
-  err_r1 <- dada2::learnErrors(filtered_r1, multithread = TRUE)
-  err_r2 <- dada2::learnErrors(filtered_r2, multithread = TRUE)
+  model_r1 <- learn_error_model(filtered_r1, "forward")
+  model_r2 <- learn_error_model(filtered_r2, "reverse")
   derep_r1 <- dada2::derepFastq(filtered_r1)
   derep_r2 <- dada2::derepFastq(filtered_r2)
-  denoised_r1 <- dada2::dada(derep_r1, err = err_r1, multithread = TRUE)
-  denoised_r2 <- dada2::dada(derep_r2, err = err_r2, multithread = TRUE)
+  denoised_r1 <- dada2::dada(
+    derep_r1, err = model_r1$error_matrix, multithread = TRUE
+  )
+  denoised_r2 <- dada2::dada(
+    derep_r2, err = model_r2$error_matrix, multithread = TRUE
+  )
   merged <- dada2::mergePairs(denoised_r1, derep_r1, denoised_r2, derep_r2)
   table <- dada2::makeSequenceTable(merged)
+  error_models <- data.frame(
+    read = c("R1", "R2"),
+    method = c(model_r1$method, model_r2$method),
+    reason = c(model_r1$reason, model_r2$reason),
+    stringsAsFactors = FALSE
+  )
 } else {
   dada2::filterAndTrim(
     r1, filtered_r1, maxN = 0, maxEE = 2, truncQ = 2,
     rm.phix = TRUE, compress = TRUE, multithread = TRUE
   )
-  errors <- dada2::learnErrors(filtered_r1, multithread = TRUE)
+  model_r1 <- learn_error_model(filtered_r1, "forward")
   derep <- dada2::derepFastq(filtered_r1)
-  denoised <- dada2::dada(derep, err = errors, multithread = TRUE)
+  denoised <- dada2::dada(
+    derep, err = model_r1$error_matrix, multithread = TRUE
+  )
   table <- dada2::makeSequenceTable(denoised)
+  error_models <- data.frame(
+    read = "R1",
+    method = model_r1$method,
+    reason = model_r1$reason,
+    stringsAsFactors = FALSE
+  )
 }
+
+write.table(
+  error_models, file.path(outdir, "error_model.tsv"),
+  sep = "\t", quote = FALSE, row.names = FALSE
+)
 
 table_nochim <- dada2::removeBimeraDenovo(
   table, method = "consensus", multithread = TRUE
