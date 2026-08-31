@@ -430,6 +430,81 @@ def command_demo(args: argparse.Namespace) -> int:
     return evaluation.returncode
 
 
+def command_real_world(args: argparse.Namespace) -> int:
+    """Download, validate, and optionally run a public empirical cohort."""
+    downloader = ROOT / "scripts" / "download_real_world_datasets.py"
+    data_root = args.data_dir if args.data_dir.is_absolute() else ROOT / args.data_dir
+    dataset_dir = data_root / args.dataset
+    metadata = dataset_dir / "metadata"
+
+    if not args.skip_download:
+        download_command = [
+            sys.executable,
+            str(downloader),
+            "--dataset", args.dataset,
+            "--data-dir", str(data_root),
+            "--max-groups", str(args.max_groups),
+            "--download",
+            "--timeout", str(args.timeout),
+            "--retries", str(args.retries),
+        ]
+        if args.verify_md5:
+            download_command.append("--verify-md5")
+        if args.force:
+            download_command.append("--force")
+
+        download_env = os.environ.copy()
+        if not download_env.get("SSL_CERT_FILE"):
+            try:
+                import certifi  # type: ignore[import-not-found]  # pylint: disable=import-outside-toplevel
+
+                download_env["SSL_CERT_FILE"] = certifi.where()
+            except ImportError:
+                pass
+        completed = subprocess.run(
+            download_command, cwd=ROOT, env=download_env, check=False
+        )
+        if completed.returncode:
+            return completed.returncode
+
+    samples = metadata / "samples.tsv"
+    controls = metadata / "control_relationships.tsv"
+    preflight = argparse.Namespace(
+        samples=samples,
+        controls=controls,
+        check_fastqs=True,
+        databases=None,
+        database_destination=None,
+        report=None,
+    )
+    if command_validate(preflight):
+        return 2
+
+    control_rows = read_tsv(controls, set(), "control relationships")
+    if not control_rows:
+        print(
+            "WARNING: this public cohort has no curated control relationships; "
+            "contamination inference will not use its negative-control libraries.",
+            file=sys.stderr,
+        )
+    if args.download_only:
+        print(f"Dataset ready: {dataset_dir}")
+        return 0
+
+    results_dir = args.outdir if args.outdir.is_absolute() else ROOT / args.outdir
+    run_args = argparse.Namespace(
+        samples=samples,
+        controls=controls,
+        outdir=results_dir,
+        profile=args.profile,
+        resume=args.resume,
+        site_config=args.site_config,
+        work_dir=args.work_dir,
+        nextflow_args=args.nextflow_args,
+    )
+    return command_run(run_args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="triarchy", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -496,6 +571,60 @@ def build_parser() -> argparse.ArgumentParser:
     )
     demo_parser.add_argument("nextflow_args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
     demo_parser.set_defaults(func=command_demo)
+
+    real_parser = sub.add_parser(
+        "real-world",
+        help="download and run a public empirical TRIARCHY cohort",
+    )
+    real_parser.add_argument(
+        "--dataset", choices=("TRI-REAL-01",), default="TRI-REAL-01",
+        help="curated public cohort (default: TRI-REAL-01)",
+    )
+    real_parser.add_argument(
+        "--data-dir", type=Path, default=Path("data/real_world"),
+        help="dataset root (default: data/real_world)",
+    )
+    real_parser.add_argument(
+        "--outdir", type=Path, default=Path("results/TRI-REAL-01"),
+        help="production results directory (default: results/TRI-REAL-01)",
+    )
+    real_parser.add_argument(
+        "--max-groups", type=int, default=4,
+        help="maximum selected sample/control groups (default: 4)",
+    )
+    real_parser.add_argument(
+        "--profile", choices=PRODUCTION_PROFILES, default="slurm",
+        help="production execution profile (default: slurm)",
+    )
+    real_parser.add_argument("--timeout", type=int, default=120)
+    real_parser.add_argument("--retries", type=int, default=3)
+    real_parser.add_argument(
+        "--verify-md5", action=argparse.BooleanOptionalAction, default=True,
+        help="verify ENA checksums (default: enabled)",
+    )
+    real_parser.add_argument("--force", action="store_true", help="replace downloaded FASTQs")
+    real_parser.add_argument(
+        "--skip-download", action="store_true",
+        help="use an already downloaded cohort without contacting ENA",
+    )
+    real_parser.add_argument(
+        "--download-only", action="store_true",
+        help="download and validate inputs without starting Nextflow",
+    )
+    real_parser.add_argument(
+        "--site-config", type=Path,
+        help="site-specific Nextflow configuration, such as a SLURM account and partition",
+    )
+    real_parser.add_argument(
+        "--work-dir", type=Path,
+        help="shared Nextflow work directory for cluster execution",
+    )
+    real_parser.add_argument(
+        "--resume", action=argparse.BooleanOptionalAction, default=True,
+        help="resume cached Nextflow tasks (default: enabled)",
+    )
+    real_parser.add_argument("nextflow_args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    real_parser.set_defaults(func=command_real_world)
 
     validate_parser = sub.add_parser("validate", help="preflight metadata, FASTQs, and optional databases")
     validate_parser.add_argument("--input", "--samples", dest="samples", type=Path, required=True)
