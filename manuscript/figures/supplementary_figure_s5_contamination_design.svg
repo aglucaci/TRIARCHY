@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100" role="img" aria-label="Supplementary Figure S5 contamination design">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#9aa8b6"/>
+</marker>
+</defs>
+<rect width="1800" height="1100" fill="white"/>
+<text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#17212b" text-anchor="start">Supplementary Figure S5. Contamination challenge design</text>
+<text x="90" y="150" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#17212b" text-anchor="start">TRI-12 known contaminants by laboratory stage</text>
+<rect x="120" y="230" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="230" width="520.0" height="42" rx="4" fill="#a43d3d" stroke="#a43d3d" stroke-width="1.2"/>
+<text x="120" y="222" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">extraction</text>
+<text x="648" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">4</text>
+<rect x="120" y="335" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="335" width="130.0" height="42" rx="4" fill="#a43d3d" stroke="#a43d3d" stroke-width="1.2"/>
+<text x="120" y="327" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">field</text>
+<text x="648" y="373" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">1</text>
+<rect x="120" y="440" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="440" width="130.0" height="42" rx="4" fill="#a43d3d" stroke="#a43d3d" stroke-width="1.2"/>
+<text x="120" y="432" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">field/extraction</text>
+<text x="648" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">1</text>
+<rect x="120" y="545" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="545" width="260.0" height="42" rx="4" fill="#a43d3d" stroke="#a43d3d" stroke-width="1.2"/>
+<text x="120" y="537" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">pcr</text>
+<text x="648" y="583" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">2</text>
+<rect x="120" y="650" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="120" y="650" width="130.0" height="42" rx="4" fill="#a43d3d" stroke="#a43d3d" stroke-width="1.2"/>
+<text x="120" y="642" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">sequencing</text>
+<text x="648" y="688" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">1</text>
+<text x="900" y="150" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#17212b" text-anchor="start">Expected assay scope</text>
+<rect x="920" y="230" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="230" width="520.0" height="42" rx="4" fill="#ddf1e5" stroke="#ddf1e5" stroke-width="1.2"/>
+<text x="920" y="222" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">16S</text>
+<text x="1448" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">6</text>
+<rect x="920" y="335" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="335" width="260.0" height="42" rx="4" fill="#f3e5d2" stroke="#f3e5d2" stroke-width="1.2"/>
+<text x="920" y="327" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">ITS</text>
+<text x="1448" y="373" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">3</text>
+<rect x="920" y="440" width="520" height="42" rx="4" fill="#f0f3f7" stroke="#e5e9ef" stroke-width="1.2"/>
+<rect x="920" y="440" width="520.0" height="42" rx="4" fill="#d8eaf6" stroke="#d8eaf6" stroke-width="1.2"/>
+<text x="920" y="432" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#657080" text-anchor="start">WMS</text>
+<text x="1448" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#17212b" text-anchor="start">6</text>
+<text x="900" y="760" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#b56b00" text-anchor="middle">Final performance bars should be populated from</text>
+<text x="900" y="784" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#b56b00" text-anchor="middle">baseline comparison output after a frozen TRI-12</text>
+<text x="900" y="808" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#b56b00" text-anchor="middle">run.</text>
+</svg>
