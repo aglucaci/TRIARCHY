@@ -1,0 +1,20 @@
+triarchy_taxon_id	canonical_name	canonical_rank	canonical_lineage	source_database	source_taxon_id	original_name	original_rank	mapping_method	mapping_confidence	database_version	database_coverage	reference_status	taxonomic_resolution_score
+TRI-NCBI-286	Pseudomonas	genus	Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Pseudomonadales;Pseudomonadaceae;Pseudomonas	16S	ASV000001	Pseudomonas	genus	demo_truth_shared_genus	1	production_installed	0.95	version_pinned_public_reference	0.75
+TRI-NCBI-286	Pseudomonas	genus	Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Pseudomonadales;Pseudomonadaceae;Pseudomonas	16S	ASV000002	Pseudomonas	genus	demo_truth_shared_genus	1	production_installed	0.95	version_pinned_public_reference	0.75
+TRI-D7FCAC1FF37F	macrocalyx	species	macrocalyx	ITS	ASV000001	macrocalyx	species	normalized_exact_name	0.5	unrecorded		unrecorded	0.875
+TRI-34F307FE88D3	Unclassified	unclassified	Unclassified	ITS	ASV000002	Unclassified	unclassified	normalized_exact_name	0.5	unrecorded		unrecorded	0
+TRI-NCBI-561	Escherichia	genus	Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia	WMS	562	Escherichia coli	s	demo_truth_shared_genus	1	production_installed	0.95	version_pinned_public_reference	0.75
+TRI-233B1CB0BACB	Escherichia albertii	s	Escherichia albertii	WMS	208962	Escherichia albertii	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-52AE86126642	Escherichia fergusonii	s	Escherichia fergusonii	WMS	564	Escherichia fergusonii	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-418C99272788	Escherichia marmotae	s	Escherichia marmotae	WMS	1499973	Escherichia marmotae	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-37F864FC3D59	Shigella flexneri	s	Shigella flexneri	WMS	623	Shigella flexneri	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-NCBI-286	Pseudomonas	genus	Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Pseudomonadales;Pseudomonadaceae;Pseudomonas	WMS	287	Pseudomonas aeruginosa	s	demo_truth_shared_genus	1	production_installed	0.95	version_pinned_public_reference	0.75
+TRI-NCBI-4930	Saccharomyces	genus	Eukaryota;Fungi;Ascomycota;Saccharomycetes;Saccharomycetales;Saccharomycetaceae;Saccharomyces	WMS	4932	Saccharomyces cerevisiae	s	demo_truth_shared_genus	1	production_installed	0.45	version_pinned_public_reference	0.75
+TRI-913A74047C90	Escherichia sp. E4742	s	Escherichia sp. E4742	WMS	2044467	Escherichia sp. E4742	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-378D64C76135	Shigella dysenteriae	s	Shigella dysenteriae	WMS	622	Shigella dysenteriae	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-B9CD1EBCAAFA	Shigella boydii	s	Shigella boydii	WMS	621	Shigella boydii	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-61EA30B1D762	Shigella sonnei	s	Shigella sonnei	WMS	624	Shigella sonnei	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-C7D0046378A3	Klebsiella pneumoniae	s	Klebsiella pneumoniae	WMS	573	Klebsiella pneumoniae	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-A47294DE7EC6	Salmonella enterica	s	Salmonella enterica	WMS	28901	Salmonella enterica	s	unsupported_rank	0	unrecorded		unrecorded	0
+TRI-NCBI-1279	Staphylococcus	genus	Bacteria;Bacillati;Bacillota;Bacilli;Caryophanales;Staphylococcaceae;Staphylococcus	WMS	1282	Staphylococcus epidermidis	s	demo_truth_shared_genus	1	production_installed	0.95	version_pinned_public_reference	0.75
+TRI-81A325C0D042	Staphylococcus aureus	s	Staphylococcus aureus	WMS	1280	Staphylococcus aureus	s	unsupported_rank	0	unrecorded		unrecorded	0

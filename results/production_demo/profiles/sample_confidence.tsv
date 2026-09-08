@@ -1,0 +1,4 @@
+biological_sample_id	wms_qc_status	16s_qc_status	its_qc_status	control_status	cross_assay_status	recommended_use	failure_reasons
+BIO_A	pass	pass	pass	linked	complete	include	
+BIO_B	pass	pass	pass	linked	complete	include	
+BIO_LOW	pass	pass	pass	linked	complete	include	

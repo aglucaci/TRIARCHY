@@ -1,0 +1,22 @@
+library_id	assay	input_reads	retained_reads	q30_rate	host_fraction	quality_factor	qc_status	qc_sources
+BIO_A_16S	16S	8000	8000		0	1	pass	BIO_A_16S.cutadapt.json
+BIO_A_ITS	ITS	8000	8000		0	1	pass	BIO_A_ITS.cutadapt.json
+BIO_A_WMS	WMS	160000	160000	1	0	1	pass	BIO_A_WMS.fastp.json;BIO_A_WMS.bowtie2.log
+BIO_B_16S	16S	8000	8000		0	1	pass	BIO_B_16S.cutadapt.json
+BIO_B_ITS	ITS	8000	8000		0	1	pass	BIO_B_ITS.cutadapt.json
+BIO_B_WMS	WMS	160000	160000	1	0.15	0.85	pass	BIO_B_WMS.fastp.json;BIO_B_WMS.bowtie2.log
+BIO_LOW_16S	16S	5000	5000		0	1	pass	BIO_LOW_16S.cutadapt.json
+BIO_LOW_ITS	ITS	5000	5000		0	1	pass	BIO_LOW_ITS.cutadapt.json
+BIO_LOW_WMS	WMS	60000	60000	1	0	1	pass	BIO_LOW_WMS.fastp.json;BIO_LOW_WMS.bowtie2.log
+EXT_NEG_EB01_16S	16S	4000	4000		0	1	pass	EXT_NEG_EB01_16S.cutadapt.json
+EXT_NEG_EB01_ITS	ITS	1000	1000		0	1	pass	EXT_NEG_EB01_ITS.cutadapt.json
+EXT_NEG_EB01_WMS	WMS	20000	20000	1	0	1	pass	EXT_NEG_EB01_WMS.fastp.json;EXT_NEG_EB01_WMS.bowtie2.log
+EXT_NEG_EB02_16S	16S	4000	4000		0	1	pass	EXT_NEG_EB02_16S.cutadapt.json
+EXT_NEG_EB02_ITS	ITS	1000	1000		0	1	pass	EXT_NEG_EB02_ITS.cutadapt.json
+EXT_NEG_EB02_WMS	WMS	20000	20000	1	0	1	pass	EXT_NEG_EB02_WMS.fastp.json;EXT_NEG_EB02_WMS.bowtie2.log
+LIB_NEG_WMS	WMS	20000	20000	1	0	1	pass	LIB_NEG_WMS.fastp.json;LIB_NEG_WMS.bowtie2.log
+PCR16_NEG_16S	16S	4000	4000		0	1	pass	PCR16_NEG_16S.cutadapt.json
+PCRITS_NEG_ITS	ITS	1000	1000		0	1	pass	PCRITS_NEG_ITS.cutadapt.json
+POS_MIXED_16S	16S	5000	5000		0	1	pass	POS_MIXED_16S.cutadapt.json
+POS_MIXED_ITS	ITS	5000	5000		0	1	pass	POS_MIXED_ITS.cutadapt.json
+POS_MIXED_WMS	WMS	60000	60000	1	0	1	pass	POS_MIXED_WMS.fastp.json;POS_MIXED_WMS.bowtie2.log

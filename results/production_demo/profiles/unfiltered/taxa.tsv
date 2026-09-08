@@ -1,0 +1,77 @@
+library_id	assay	feature_id	original_name	original_rank	abundance
+PCR16_NEG_16S	16S	ASV000001	Staphylococcus	genus	3920
+BIO_A_16S	16S	ASV000001	Pseudomonas	genus	3440
+BIO_A_16S	16S	ASV000002	Staphylococcus	genus	160
+BIO_LOW_16S	16S	ASV000001	Staphylococcus	genus	3500
+BIO_LOW_16S	16S	ASV000002	Pseudomonas	genus	500
+BIO_B_16S	16S	ASV000001	Pseudomonas	genus	4000
+BIO_B_16S	16S	ASV000002	Staphylococcus	genus	400
+EXT_NEG_EB01_16S	16S	ASV000001	Staphylococcus	genus	3800
+EXT_NEG_EB02_16S	16S	ASV000001	Staphylococcus	genus	3800
+EXT_NEG_EB02_16S	16S	ASV000002	Pseudomonas	genus	200
+POS_MIXED_16S	16S	ASV000001	Pseudomonas	genus	2500
+PCRITS_NEG_ITS	ITS	ASV000001	Unclassified	unclassified	898
+PCRITS_NEG_ITS	ITS	ASV000002	Unclassified	unclassified	99
+EXT_NEG_EB02_ITS	ITS	ASV000001	macrocalyx	species	849
+EXT_NEG_EB02_ITS	ITS	ASV000002	albicans	species	149
+EXT_NEG_EB01_ITS	ITS	ASV000001	Unclassified	unclassified	799
+EXT_NEG_EB01_ITS	ITS	ASV000002	Unclassified	unclassified	200
+BIO_B_ITS	ITS	ASV000001	macrocalyx	species	6389
+BIO_B_ITS	ITS	ASV000002	rhynchopetalum	species	1594
+POS_MIXED_ITS	ITS	ASV000001	macrocalyx	species	2990
+POS_MIXED_ITS	ITS	ASV000002	rhynchopetalum	species	1994
+BIO_A_ITS	ITS	ASV000001	macrocalyx	species	5990
+BIO_A_ITS	ITS	ASV000002	albicans	species	1994
+BIO_LOW_ITS	ITS	ASV000001	macrocalyx	species	3240
+BIO_LOW_ITS	ITS	ASV000002	Unclassified	unclassified	1746
+POS_MIXED_WMS	WMS	562	Escherichia coli	s	11394
+POS_MIXED_WMS	WMS	208962	Escherichia albertii	s	30
+POS_MIXED_WMS	WMS	564	Escherichia fergusonii	s	25
+POS_MIXED_WMS	WMS	1499973	Escherichia marmotae	s	14
+POS_MIXED_WMS	WMS	623	Shigella flexneri	s	313
+POS_MIXED_WMS	WMS	287	Pseudomonas aeruginosa	s	10475
+POS_MIXED_WMS	WMS	4932	Saccharomyces cerevisiae	s	7501
+BIO_A_WMS	WMS	562	Escherichia coli	s	33605
+BIO_A_WMS	WMS	208962	Escherichia albertii	s	90
+BIO_A_WMS	WMS	564	Escherichia fergusonii	s	66
+BIO_A_WMS	WMS	1499973	Escherichia marmotae	s	38
+BIO_A_WMS	WMS	2044467	Escherichia sp. E4742	s	33
+BIO_A_WMS	WMS	623	Shigella flexneri	s	873
+BIO_A_WMS	WMS	622	Shigella dysenteriae	s	198
+BIO_A_WMS	WMS	621	Shigella boydii	s	87
+BIO_A_WMS	WMS	624	Shigella sonnei	s	373
+BIO_A_WMS	WMS	573	Klebsiella pneumoniae	s	58
+BIO_A_WMS	WMS	28901	Salmonella enterica	s	121
+BIO_A_WMS	WMS	287	Pseudomonas aeruginosa	s	27931
+BIO_A_WMS	WMS	1282	Staphylococcus epidermidis	s	1593
+BIO_A_WMS	WMS	4932	Saccharomyces cerevisiae	s	14401
+LIB_NEG_WMS	WMS	1282	Staphylococcus epidermidis	s	9717
+LIB_NEG_WMS	WMS	1280	Staphylococcus aureus	s	51
+LIB_NEG_WMS	WMS	562	Escherichia coli	s	197
+BIO_LOW_WMS	WMS	562	Escherichia coli	s	12863
+BIO_LOW_WMS	WMS	208962	Escherichia albertii	s	35
+BIO_LOW_WMS	WMS	564	Escherichia fergusonii	s	31
+BIO_LOW_WMS	WMS	1499973	Escherichia marmotae	s	15
+BIO_LOW_WMS	WMS	623	Shigella flexneri	s	259
+BIO_LOW_WMS	WMS	622	Shigella dysenteriae	s	70
+BIO_LOW_WMS	WMS	287	Pseudomonas aeruginosa	s	5397
+BIO_LOW_WMS	WMS	1282	Staphylococcus epidermidis	s	7989
+BIO_LOW_WMS	WMS	1280	Staphylococcus aureus	s	114
+BIO_LOW_WMS	WMS	4932	Saccharomyces cerevisiae	s	2999
+BIO_B_WMS	WMS	4932	Saccharomyces cerevisiae	s	34392
+BIO_B_WMS	WMS	287	Pseudomonas aeruginosa	s	15941
+BIO_B_WMS	WMS	562	Escherichia coli	s	15139
+BIO_B_WMS	WMS	208962	Escherichia albertii	s	37
+BIO_B_WMS	WMS	564	Escherichia fergusonii	s	27
+BIO_B_WMS	WMS	2044467	Escherichia sp. E4742	s	17
+BIO_B_WMS	WMS	1499973	Escherichia marmotae	s	15
+BIO_B_WMS	WMS	622	Shigella dysenteriae	s	89
+BIO_B_WMS	WMS	623	Shigella flexneri	s	322
+BIO_B_WMS	WMS	621	Shigella boydii	s	106
+BIO_B_WMS	WMS	1282	Staphylococcus epidermidis	s	1597
+EXT_NEG_EB01_WMS	WMS	1282	Staphylococcus epidermidis	s	9316
+EXT_NEG_EB01_WMS	WMS	1280	Staphylococcus aureus	s	168
+EXT_NEG_EB01_WMS	WMS	562	Escherichia coli	s	485
+EXT_NEG_EB02_WMS	WMS	1282	Staphylococcus epidermidis	s	9383
+EXT_NEG_EB02_WMS	WMS	1280	Staphylococcus aureus	s	99
+EXT_NEG_EB02_WMS	WMS	4932	Saccharomyces cerevisiae	s	500

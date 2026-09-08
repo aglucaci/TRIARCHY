@@ -1,0 +1,9 @@
+{
+  "workflow": "TRIARCHY",
+  "workflow_version": "26.04.6",
+  "git_commit": "c74cbbae2a6b99193b30f4459e834d1609b26205",
+  "samples_sha256": "7285475003b652e6b2867288b00e99244092800a9224183aa96235e278137f9c",
+  "controls_sha256": "fde416cbdee20dc877a42d63dd59eb09a98e12f218560d7ae503d531a14c8112",
+  "created_at": "2026-09-02T13:17:03.555141+00:00",
+  "run_mode": "production"
+}

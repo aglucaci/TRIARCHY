@@ -1,0 +1,10 @@
+biological_sample_id	kingdom	assay_pair	assay_a_taxa	assay_b_taxa	shared_taxa	union_taxa	jaccard_presence	spearman_rank_correlation	rank_agreement_score	scope
+BIO_A	Bacteria	WMS_vs_16S	13	2	2	13	0.153846	1	0.5	detection_and_rank_only
+BIO_A	Archaea	WMS_vs_16S	0	0	0	0	0	0	0	detection_and_rank_only
+BIO_A	Fungi	WMS_vs_ITS	1	0	0	1	0	0	0	detection_and_rank_only
+BIO_B	Bacteria	WMS_vs_16S	10	2	2	10	0.2	1	0.75	detection_and_rank_only
+BIO_B	Archaea	WMS_vs_16S	0	0	0	0	0	0	0	detection_and_rank_only
+BIO_B	Fungi	WMS_vs_ITS	1	0	0	1	0	0	0	detection_and_rank_only
+BIO_LOW	Bacteria	WMS_vs_16S	9	2	2	9	0.222222	1	0.5	detection_and_rank_only
+BIO_LOW	Archaea	WMS_vs_16S	0	0	0	0	0	0	0	detection_and_rank_only
+BIO_LOW	Fungi	WMS_vs_ITS	1	0	0	1	0	0	0	detection_and_rank_only

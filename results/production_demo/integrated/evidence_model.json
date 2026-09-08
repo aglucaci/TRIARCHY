@@ -1,0 +1,80 @@
+{
+  "assay_performance": {
+    "16S:Archaea": {
+      "false_positive_rate": 0.02,
+      "minimum_depth": 10000.0,
+      "reference_coverage": 0.8,
+      "reliability": 0.85
+    },
+    "16S:Bacteria": {
+      "false_positive_rate": 0.01,
+      "minimum_depth": 5000.0,
+      "reference_coverage": 0.95,
+      "reliability": 0.9
+    },
+    "ITS:Fungi": {
+      "false_positive_rate": 0.01,
+      "minimum_depth": 5000.0,
+      "reference_coverage": 0.9,
+      "reliability": 0.9
+    },
+    "WMS:Archaea": {
+      "false_positive_rate": 0.02,
+      "minimum_depth": 20000.0,
+      "reference_coverage": 0.8,
+      "reliability": 0.8
+    },
+    "WMS:Bacteria": {
+      "false_positive_rate": 0.01,
+      "minimum_depth": 10000.0,
+      "reference_coverage": 0.95,
+      "reliability": 0.85
+    },
+    "WMS:Fungi": {
+      "false_positive_rate": 0.03,
+      "minimum_depth": 100000.0,
+      "reference_coverage": 0.65,
+      "reliability": 0.6
+    }
+  },
+  "interpretation": "biological_authenticity is the stage-I posterior-style authenticity estimate. cross_assay_status is the stage-II explanation. probability_authentic is retained for compatibility and is calibrated only to the status named in calibration.status; synthetic calibration is not empirical validation.",
+  "model_version": "triarchy-authenticity-v1.0",
+  "output_rows": 57,
+  "policy": {
+    "absent_score_threshold": 0.2,
+    "adequate_detection_power": 0.8,
+    "authenticity_absent_threshold": 0.2,
+    "authenticity_supported_threshold": 0.8,
+    "batch_localization_threshold": 0.65,
+    "calibration": {
+      "breakpoints": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "method": "piecewise_linear",
+      "status": "synthetic_only_not_empirically_calibrated",
+      "values": [
+        0.02,
+        0.08,
+        0.25,
+        0.62,
+        0.88,
+        0.98
+      ]
+    },
+    "contaminant_threshold": 0.65,
+    "cross_contamination_threshold": 0.45,
+    "indeterminate_ci_overlap_high": 0.8,
+    "indeterminate_ci_overlap_low": 0.2,
+    "low_detection_power": 0.5,
+    "minimum_mapping_confidence": 0.5,
+    "minimum_reference_coverage": 0.55,
+    "model_version": "triarchy-authenticity-v1.0",
+    "present_score_threshold": 0.75,
+    "prior_presence": 0.25
+  }
+}

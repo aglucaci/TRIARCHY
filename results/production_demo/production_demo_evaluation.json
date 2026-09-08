@@ -1,0 +1,154 @@
+{
+  "evaluation": "TRIARCHY Production Demo v1.0",
+  "evaluated_at": "2026-09-02T19:37:54.420873+00:00",
+  "results": "/athena/cayuga_0003/scratch/agl4001/TRIARCHY/results/production_demo",
+  "ok": false,
+  "passed": 7,
+  "total": 13,
+  "required_failures": 6,
+  "checks": [
+    {
+      "check_id": "BIO_A_ECOLI",
+      "check_type": "classification",
+      "target_id": "BIO_A",
+      "canonical_name": "Escherichia",
+      "expected": "concordant_detection|rank_limited_agreement",
+      "observed": "assay_limited_nondetection",
+      "passed": false,
+      "required": true,
+      "detail": "16S estimated detection power is insufficient"
+    },
+    {
+      "check_id": "BIO_A_PSEUDOMONAS",
+      "check_type": "classification",
+      "target_id": "BIO_A",
+      "canonical_name": "Pseudomonas",
+      "expected": "concordant_detection|rank_limited_agreement",
+      "observed": "concordant_detection",
+      "passed": true,
+      "required": true,
+      "detail": "all kingdom-appropriate assays support the canonical taxon"
+    },
+    {
+      "check_id": "BIO_A_SACCHAROMYCES",
+      "check_type": "classification",
+      "target_id": "BIO_A",
+      "canonical_name": "Saccharomyces",
+      "expected": "concordant_detection|rank_limited_agreement",
+      "observed": "single_assay_credible",
+      "passed": false,
+      "required": true,
+      "detail": "one expected assay supports the taxon; ITS is not decisively contradictory"
+    },
+    {
+      "check_id": "BIO_A_CANDIDA",
+      "check_type": "classification",
+      "target_id": "BIO_A",
+      "canonical_name": "Candida",
+      "expected": "assay_limited_nondetection",
+      "observed": "missing",
+      "passed": false,
+      "required": true,
+      "detail": "taxon evidence row not found"
+    },
+    {
+      "check_id": "BIO_LOW_STAPH",
+      "check_type": "classification",
+      "target_id": "BIO_LOW",
+      "canonical_name": "Staphylococcus",
+      "expected": "probable_contaminant",
+      "observed": "probable_contaminant",
+      "passed": true,
+      "required": true,
+      "detail": "linked-control evidence exceeds the contaminant threshold"
+    },
+    {
+      "check_id": "BIO_B_HOST",
+      "check_type": "host_fraction",
+      "target_id": "BIO_B_WMS",
+      "canonical_name": "Homo sapiens",
+      "expected": ".08\u2013.25",
+      "observed": "0.15",
+      "passed": true,
+      "required": true,
+      "detail": "expected .08\u2013.25"
+    },
+    {
+      "check_id": "POS_WMS_ECOLI",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_WMS",
+      "canonical_name": "Escherichia",
+      "expected": "detected",
+      "observed": "detected",
+      "passed": true,
+      "required": true,
+      "detail": "Escherichia coli"
+    },
+    {
+      "check_id": "POS_WMS_PSEUDOMONAS",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_WMS",
+      "canonical_name": "Pseudomonas",
+      "expected": "detected",
+      "observed": "detected",
+      "passed": true,
+      "required": true,
+      "detail": "Pseudomonas aeruginosa"
+    },
+    {
+      "check_id": "POS_WMS_SACCHAROMYCES",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_WMS",
+      "canonical_name": "Saccharomyces",
+      "expected": "detected",
+      "observed": "detected",
+      "passed": true,
+      "required": true,
+      "detail": "Saccharomyces cerevisiae"
+    },
+    {
+      "check_id": "POS_16S_ECOLI",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_16S",
+      "canonical_name": "Escherichia",
+      "expected": "detected",
+      "observed": "missing",
+      "passed": false,
+      "required": true,
+      "detail": "profile row not found"
+    },
+    {
+      "check_id": "POS_16S_PSEUDOMONAS",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_16S",
+      "canonical_name": "Pseudomonas",
+      "expected": "detected",
+      "observed": "detected",
+      "passed": true,
+      "required": true,
+      "detail": "Pseudomonas"
+    },
+    {
+      "check_id": "POS_ITS_SACCHAROMYCES",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_ITS",
+      "canonical_name": "Saccharomyces",
+      "expected": "detected",
+      "observed": "missing",
+      "passed": false,
+      "required": true,
+      "detail": "profile row not found"
+    },
+    {
+      "check_id": "POS_ITS_CANDIDA",
+      "check_type": "profile_detection",
+      "target_id": "POS_MIXED_ITS",
+      "canonical_name": "Candida",
+      "expected": "detected",
+      "observed": "missing",
+      "passed": false,
+      "required": true,
+      "detail": "profile row not found"
+    }
+  ]
+}
