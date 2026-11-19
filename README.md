@@ -49,7 +49,7 @@ full requirements.
 | [Parameters](docs/parameters.md) | Every pipeline parameter (generated from `nextflow_schema.json`) |
 | [Outputs](docs/outputs.md) | Result files and the evidence dashboard |
 | [Production demo](docs/demo.md) | Deterministic synthetic benchmark and its truth table |
-| [Public datasets](docs/datasets.md) | Empirical validation cohort and catalogued studies |
+| [Public datasets](docs/datasets.md) | `TRI-REAL-05` empirical cohort with linked blanks and ZymoBIOMICS truth; HPC instructions |
 | [Architecture](docs/architecture.md) | Workflow graph and source layout |
 | [Troubleshooting](docs/troubleshooting.md) | Debugging failed tasks |
 

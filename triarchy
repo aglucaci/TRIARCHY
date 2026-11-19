@@ -288,6 +288,12 @@ def command_run(args: argparse.Namespace) -> int:
         "-c",
         str(reference_config),
     ]
+    cohort_config = getattr(args, "cohort_config", None)
+    if cohort_config:
+        if not cohort_config.is_file():
+            print(f"ERROR: cohort configuration is missing: {cohort_config}", file=sys.stderr)
+            return 2
+        command.extend(["-c", str(cohort_config.resolve())])
     site_config = getattr(args, "site_config", None)
     if site_config:
         if not site_config.is_file():
@@ -450,11 +456,20 @@ def command_real_world(args: argparse.Namespace) -> int:
             str(downloader),
             "--dataset", args.dataset,
             "--data-dir", str(data_root),
-            "--max-groups", str(args.max_groups),
             "--download",
             "--timeout", str(args.timeout),
             "--retries", str(args.retries),
         ]
+        if args.dataset == "TRI-REAL-01":
+            download_command.extend(["--max-groups", str(args.max_groups)])
+        else:
+            for kit in args.extraction_kit or []:
+                download_command.extend(["--extraction-kit", kit])
+            download_command.extend(["--biomass-plate", args.biomass_plate])
+            if args.max_biological_per_plate is not None:
+                download_command.extend(
+                    ["--max-biological-per-plate", str(args.max_biological_per_plate)]
+                )
         if args.verify_md5:
             download_command.append("--verify-md5")
         if args.force:
@@ -498,18 +513,36 @@ def command_real_world(args: argparse.Namespace) -> int:
         print(f"Dataset ready: {dataset_dir}")
         return 0
 
-    results_dir = args.outdir if args.outdir.is_absolute() else ROOT / args.outdir
+    cohort_config = None
+    dataset_json = metadata / "dataset.json"
+    if dataset_json.is_file():
+        configured = json.loads(dataset_json.read_text(encoding="utf-8")).get("dataset", {})
+        if configured.get("nextflow_config"):
+            cohort_config = ROOT / configured["nextflow_config"]
+
+    outdir = args.outdir or Path("results") / args.dataset
+    results_dir = outdir if outdir.is_absolute() else ROOT / outdir
     run_args = argparse.Namespace(
         samples=samples,
         controls=controls,
         outdir=results_dir,
+        cohort_config=cohort_config,
         profile=args.profile,
         resume=args.resume,
         site_config=args.site_config,
         work_dir=args.work_dir,
         nextflow_args=args.nextflow_args,
     )
-    return command_run(run_args)
+    status = command_run(run_args)
+    truth = dataset_dir / "truth" / "mock_truth.tsv"
+    if status == 0 and truth.is_file():
+        evaluator = ROOT / "scripts" / "evaluate_mock_truth.py"
+        status = subprocess.run(
+            [sys.executable, str(evaluator), "--results", str(results_dir),
+             "--truth", str(truth), "--samples", str(samples)],
+            cwd=ROOT, check=False,
+        ).returncode
+    return status
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -585,20 +618,39 @@ def build_parser() -> argparse.ArgumentParser:
         help="download and run a public empirical TRIARCHY cohort",
     )
     real_parser.add_argument(
-        "--dataset", choices=("TRI-REAL-01",), default="TRI-REAL-01",
-        help="curated public cohort (default: TRI-REAL-01)",
+        "--dataset", choices=("TRI-REAL-05", "TRI-REAL-01"), default="TRI-REAL-05",
+        help=(
+            "public cohort: TRI-REAL-05 = whole Shaffer extraction plates with linked "
+            "blanks and ZymoBIOMICS truth (default); TRI-REAL-01 = small 4-group subset"
+        ),
     )
     real_parser.add_argument(
         "--data-dir", type=Path, default=Path("data/real_world"),
         help="dataset root (default: data/real_world)",
     )
     real_parser.add_argument(
-        "--outdir", type=Path, default=Path("results/TRI-REAL-01"),
-        help="production results directory (default: results/TRI-REAL-01)",
+        "--outdir", type=Path,
+        help="production results directory (default: results/<dataset>)",
     )
     real_parser.add_argument(
         "--max-groups", type=int, default=4,
-        help="maximum selected sample/control groups (default: 4)",
+        help="TRI-REAL-01 only: maximum selected sample/control groups (default: 4)",
+    )
+    real_parser.add_argument(
+        "--extraction-kit", action="append",
+        help=(
+            "TRI-REAL-05 only: Qiita extraction_kit_round to include, repeatable "
+            "(default: 'PowerSoil r1'; round-1 kits: 'PowerSoil r1', 'PowerSoil Pro', "
+            "'MagMax Beta', 'Norgen', 'Zymo MagBead', 'Homebrew')"
+        ),
+    )
+    real_parser.add_argument(
+        "--biomass-plate", choices=("high", "low", "both"), default="both",
+        help="TRI-REAL-05 only: extraction plates to include (default: both)",
+    )
+    real_parser.add_argument(
+        "--max-biological-per-plate", type=int,
+        help="TRI-REAL-05 only: cap non-mock biological samples per plate (default: all)",
     )
     real_parser.add_argument(
         "--profile", choices=PRODUCTION_PROFILES, default="slurm",

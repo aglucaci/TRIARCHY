@@ -23,6 +23,9 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import qiita_cohort  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_DIR = ROOT / "data" / "real_world"
@@ -123,6 +126,9 @@ class DatasetConfig:
     qiita_id: str = ""
     note: str = ""
     group_mode: str = "sample_alias"
+    cohort_builder: str = ""
+    nextflow_config: str = ""
+    default_extraction_kits: tuple[str, ...] = ()
 
 
 DATASETS = {
@@ -141,6 +147,23 @@ DATASETS = {
             default_max_groups=30,
             selection="mock_controls",
             group_mode="qiita_core",
+        ),
+        DatasetConfig(
+            dataset_id="TRI-REAL-05",
+            study_accession="ERP124610",
+            qiita_id="12201",
+            title="Shaffer extraction-plate cohort with ZymoBIOMICS truth",
+            purpose=(
+                "Recommended empirical validation cohort: every complete "
+                "WMS/16S/ITS sample on whole extraction plates, with each "
+                "extraction blank linked to the samples on its plate and "
+                "ZymoBIOMICS D6310 dilution series as ground truth."
+            ),
+            default_max_groups=0,
+            selection="qiita_extraction_plates",
+            cohort_builder="qiita_extraction_plates",
+            nextflow_config="conf/cohorts/shaffer_emp.config",
+            default_extraction_kits=("PowerSoil r1",),
         ),
         DatasetConfig(
             dataset_id="TRI-REAL-02",
@@ -786,6 +809,71 @@ def display_data_dir(dataset_dir: Path) -> str:
         return str(dataset_dir)
 
 
+def process_qiita_cohort(
+    args: argparse.Namespace,
+    config: DatasetConfig,
+    dataset_dir: Path,
+    metadata_dir: Path,
+    annotated: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[dict[str, object]], dict[str, object], dict[str, object]]:
+    qiita_rows = qiita_cohort.fetch_qiita_sample_info(
+        config.qiita_id,
+        metadata_dir / "qiita_sample_information.tsv",
+        timeout=args.timeout,
+        retries=args.retries,
+        refresh=args.refresh_metadata,
+    )
+    kits = args.extraction_kit or list(config.default_extraction_kits)
+    plates = ["high", "low"] if args.biomass_plate == "both" else [args.biomass_plate]
+    selected_samples, selected_runs, selection_summary = qiita_cohort.select_cohort(
+        qiita_rows,
+        annotated,
+        kits=kits,
+        plates=plates,
+        max_biological_per_plate=args.max_biological_per_plate,
+    )
+
+    def fastq_paths(run: dict[str, str]) -> tuple[str, str, str]:
+        return fastq_paths_for_sample(dataset_dir, metadata_dir, run)
+
+    samples, controls, truth = qiita_cohort.build_cohort_metadata(
+        selected_samples, selected_runs, fastq_paths
+    )
+    selected = sorted(
+        (run for runs in selected_runs.values() for run in runs.values()),
+        key=lambda run: (run["sample_title"], run["run_accession"]),
+    )
+    for run in selected:
+        run["triarchy_sample_group"] = run["sample_title"]
+    truth_dir = dataset_dir / "truth"
+    write_tsv(truth_dir / "mock_truth.tsv", qiita_cohort.TRUTH_FIELDS, truth)
+    qiita_subset = qiita_cohort.subset_qiita_rows(qiita_rows, selected_samples)
+    if qiita_subset:
+        write_tsv(metadata_dir / "selected_qiita_samples.tsv", list(qiita_subset[0]), qiita_subset)
+    runs_by_title: dict[str, dict[str, dict[str, str]]] = {}
+    for run in annotated:
+        runs_by_title.setdefault(run["sample_title"], {})[run["triarchy_assay"]] = run
+    plate_counts = qiita_cohort.available_plates(qiita_rows, runs_by_title)
+    metadata_summary = {
+        "samples": len(samples),
+        "controls": len(controls),
+        "mock_truth_rows": len(truth),
+        "nextflow_config": config.nextflow_config,
+        "available_extraction_plates": {
+            f"round {r} | {kit} | {plate}": count
+            for (r, kit, plate), count in sorted(plate_counts.items())
+        },
+        "note": (
+            "Control relationships link every extraction blank to all samples "
+            "extracted on the same plate (Qiita round, extraction_kit_round, "
+            "biomass_plate). ZymoBIOMICS standards are processed as biological "
+            "samples so the evidence model scores them; truth/mock_truth.tsv "
+            "lists their expected composition."
+        ),
+    }
+    return selected, samples, controls, {"selection": selection_summary, "metadata": metadata_summary}
+
+
 def process_dataset(args: argparse.Namespace, config: DatasetConfig) -> dict[str, object]:
     max_groups = args.max_groups if args.max_groups is not None else config.default_max_groups
     dataset_dir = args.data_dir / config.dataset_id
@@ -794,19 +882,26 @@ def process_dataset(args: argparse.Namespace, config: DatasetConfig) -> dict[str
 
     query_url, ena_rows = fetch_ena_runs(config, timeout=args.timeout, retries=args.retries)
     annotated = [annotate_row(config, row) for row in ena_rows]
-    selected, selection_summary = select_groups(
-        annotated,
-        selection=config.selection,
-        max_groups=max_groups,
-        max_control_groups=args.max_control_groups,
-        include_all_runs=args.include_all_runs,
-    )
+    if config.cohort_builder == "qiita_extraction_plates":
+        selected, samples, controls, summaries = process_qiita_cohort(
+            args, config, dataset_dir, metadata_dir, annotated
+        )
+        selection_summary = summaries["selection"]
+        metadata_summary = summaries["metadata"]
+    else:
+        selected, selection_summary = select_groups(
+            annotated,
+            selection=config.selection,
+            max_groups=max_groups,
+            max_control_groups=args.max_control_groups,
+            include_all_runs=args.include_all_runs,
+        )
+        samples, controls, metadata_summary = build_triarchy_metadata(
+            dataset_dir,
+            selected,
+            amplicon_assay=args.amplicon_assay,
+        )
     download_manifest = build_download_manifest(dataset_dir, selected)
-    samples, controls, metadata_summary = build_triarchy_metadata(
-        dataset_dir,
-        selected,
-        amplicon_assay=args.amplicon_assay,
-    )
 
     write_tsv(metadata_dir / "ena_runs.tsv", ENA_FIELDS, ena_rows)
     write_tsv(metadata_dir / "selected_runs.tsv", SELECTED_FIELDS, selected)
@@ -887,6 +982,8 @@ def process_dataset(args: argparse.Namespace, config: DatasetConfig) -> dict[str
         "draft_triarchy_metadata": metadata_summary,
         "download_summary": download_summary,
         "triarchy_metadata_note": (
+            "Curated from Qiita sample information; see draft_triarchy_metadata.note."
+            if config.cohort_builder else
             "This script creates ENA run and file manifests. Curate "
             "TRIARCHY samples.tsv and control_relationships.tsv from the "
             "study metadata before running biological validation."
@@ -924,6 +1021,30 @@ def build_parser() -> argparse.ArgumentParser:
         default="16S",
         help="TRIARCHY assay label for unresolved ENA AMPLICON runs in draft samples.tsv",
     )
+    parser.add_argument(
+        "--extraction-kit",
+        action="append",
+        help=(
+            "Qiita extraction_kit_round to include for curated extraction-plate cohorts "
+            "(repeatable; default for TRI-REAL-05: 'PowerSoil r1')"
+        ),
+    )
+    parser.add_argument(
+        "--biomass-plate",
+        choices=("high", "low", "both"),
+        default="both",
+        help="Extraction plates to include for curated extraction-plate cohorts (default: both)",
+    )
+    parser.add_argument(
+        "--max-biological-per-plate",
+        type=int,
+        help="Cap non-mock biological samples per extraction plate, stratified by sample type",
+    )
+    parser.add_argument(
+        "--refresh-metadata",
+        action="store_true",
+        help="Re-download cached Qiita sample information",
+    )
     parser.add_argument("--include-all-runs", action="store_true", help="Select every ENA run returned by the study query")
     parser.add_argument("--download", action="store_true", help="Download FASTQ files listed in the selected manifest")
     parser.add_argument("--verify-md5", action="store_true", help="Verify downloaded files against ENA MD5 values when present")
@@ -951,7 +1072,11 @@ def main(argv: list[str] | None = None) -> int:
     args.data_dir = args.data_dir if args.data_dir.is_absolute() else ROOT / args.data_dir
     try:
         for dataset_id in dataset_ids:
-            payload = process_dataset(args, DATASETS[dataset_id])
+            try:
+                payload = process_dataset(args, DATASETS[dataset_id])
+            except qiita_cohort.CohortError as error:
+                print(f"ERROR: {dataset_id}: {error}", file=sys.stderr)
+                return 2
             print(
                 f"{dataset_id}: fetched {payload['fetched_runs']} runs, "
                 f"selected {payload['selected_runs']} runs, "

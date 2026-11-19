@@ -1,11 +1,177 @@
-# Public empirical cohort
+# Public empirical cohorts
 
-`TRI-REAL-01` is a small empirical validation subset of the UC San Diego DNA
-extraction comparison study [ENA ERP124610](https://www.ebi.ac.uk/ena/browser/view/ERP124610),
-also registered as [BioProject PRJEB40903](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB40903)
-and [Qiita study 12201](https://qiita.ucsd.edu/study/description/12201).
-The source experiment compared extraction methods for microbial-community DNA
-using 16S, ITS, and shotgun metagenomic sequencing [1].
+Both cohorts come from the UC San Diego DNA extraction comparison study
+[ENA ERP124610](https://www.ebi.ac.uk/ena/browser/view/ERP124610)
+([BioProject PRJEB40903](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB40903),
+[Qiita study 12201](https://qiita.ucsd.edu/study/description/12201)), which
+compared DNA extraction kits using 16S, ITS, and shotgun metagenomic
+sequencing of the same extractions [1].
+
+| Cohort | Use | Samples | Controls | Ground truth |
+| --- | --- | --- | --- | --- |
+| `TRI-REAL-05` (default) | Empirical validation on HPC | Whole extraction plates (190 samples by default) | Every extraction blank linked to the samples on its plate | ZymoBIOMICS D6310 dilution series |
+| `TRI-REAL-01` | Quick integration smoke test | 4 groups | None (empty control table) | None |
+
+## TRI-REAL-05: extraction plates with linked blanks and mock truth
+
+### Design
+
+The Qiita sample information for study 12201 records, for every extraction,
+the kit (`extraction_kit_round`), extraction round, extraction plate
+(`biomass_plate`: high or low biomass) and plate well. `TRI-REAL-05` uses it
+to build a cohort that the ENA metadata alone cannot support:
+
+- **Whole plates.** Every sample on the selected extraction plates that has
+  WMS, 16S, and ITS runs is included. By default these are the two round-1
+  PowerSoil plates (the Earth Microbiome Project reference kit).
+- **Linked extraction blanks.** Each extraction blank is linked, per assay, to
+  every sample extracted on the same plate (`control_stage=extraction`,
+  `relationship=same_batch`). Blanks are never linked across plates.
+- **Physical ground truth.** Each plate carries a dilution series (`d1`–`d8`,
+  with three replicates on the low-biomass plate) of the ZymoBIOMICS
+  Microbial Community Standard II, Log Distribution (D6310): eight bacteria and
+  two yeasts spanning 89.1% to 0.000089% of genomic DNA. These samples are
+  processed as biological samples, so TRIARCHY scores them like any other, and
+  `truth/mock_truth.tsv` lists their expected composition, transcribed from
+  Table 1 of the Zymo instruction manual (genomic DNA, 16S, 16S+18S, genome
+  copy, and cell number percentages).
+- **Diverse materials.** The default plates include human saliva, feces,
+  skin, urine and milk; cat and mouse feces; mouse jejunum; bare and
+  rhizosphere soil; kimchi; yogurt; floor dust; keyboard swabs; freshwater; and
+  seawater, mostly in technical triplicate.
+
+| Property | Default selection (`PowerSoil r1`, both plates) |
+| --- | --- |
+| Samples | 190: 148 biological, 32 ZymoBIOMICS D6310, 10 extraction blanks |
+| Libraries | 570 (190 each of WMS, 16S, ITS) |
+| Control relationships | 2,694 blank-to-library links |
+| Download | About 6.1 GB (WMS 5.7 GB, 16S 0.2 GB, ITS 0.2 GB) |
+| Layout | Paired-end WMS (HiSeq 4000); single-end 16S and ITS (MiSeq) |
+| Amplicons | EMP 515F/806R (16S V4) and ITS1f/ITS2 (ITS1) |
+
+The study used Earth Microbiome Project primers, not TRIARCHY's default
+V3–V4 and ITS2 configuration. `triarchy real-world` therefore applies
+[`conf/cohorts/shaffer_emp.config`](../conf/cohorts/shaffer_emp.config), which
+sets the EMP primers and makes ITSxpress extract ITS1. Without it, ITSxpress
+would find no ITS2 region in these amplicons.
+
+### Scaling the cohort
+
+| Option | Samples | Libraries | Download |
+| --- | --- | --- | --- |
+| Default (`PowerSoil r1`) | 190 | 570 | 6.1 GB |
+| `--max-biological-per-plate 20` | 82 | 246 | 2.3 GB |
+| `--extraction-kit "PowerSoil r1" --extraction-kit "PowerSoil Pro"` | 377 | 1,131 | 14 GB |
+| All six round-1 kits | 1,282 | 3,846 | 97 GB |
+
+`--max-biological-per-plate` caps the non-mock biological samples on each
+plate, rotating through sample types so every material stays represented;
+blanks and mocks are always kept. Adding kits turns the cohort into an
+extraction-method comparison. Round-1 kits are `PowerSoil r1`,
+`PowerSoil Pro`, `MagMax Beta`, `Norgen`, `Zymo MagBead`, and `Homebrew`;
+round-2 kits (`PowerSoil r2`, `MagMAX Microbiome`, `NucleoMag Food`) carry
+the even D6300 standard instead. `Zymo MagBead` was used in both rounds and
+selecting it includes both. `dataset.json` lists the complete samples available
+on every plate.
+
+### Running on an HPC cluster
+
+1. **Download on a node with internet access** (login or transfer node). This
+   fetches the ENA run table and the public Qiita sample information, writes
+   the manifests and truth table, downloads the FASTQs with MD5 verification,
+   and validates the cohort:
+
+   ```bash
+   mamba activate TRIARCHY
+   triarchy real-world --dataset TRI-REAL-05 --download-only
+   ```
+
+   Files land in `data/real_world/TRI-REAL-05/` (`reads/`, `metadata/`,
+   `truth/`). Use `--data-dir` to place them on project storage.
+
+2. **Write a site config** for your scheduler, for example
+   `/shared/project/triarchy-site.config`:
+
+   ```groovy
+   process {
+       clusterOptions = '--account=YOUR_ACCOUNT'
+       queue = 'YOUR_PARTITION'
+       // WMS taxonomy dominates runtime: each task scans the full Kraken 2
+       // PlusPFP database. Allow more concurrent tasks if your storage can
+       // sustain it, and place the database on fast storage.
+       withName: WGS_TAXONOMY {
+           maxForks = 8
+       }
+   }
+   ```
+
+3. **Submit the Nextflow head job** so it survives logout. It needs little
+   CPU or memory but must run for the whole workflow:
+
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=triarchy-tri-real-05
+   #SBATCH --time=7-00:00:00
+   #SBATCH --cpus-per-task=2
+   #SBATCH --mem=8G
+   #SBATCH --output=triarchy-tri-real-05-%j.log
+
+   source "$(conda info --base)/etc/profile.d/conda.sh"
+   conda activate TRIARCHY
+   cd /path/to/TRIARCHY
+   triarchy real-world --dataset TRI-REAL-05 --skip-download \
+     --profile slurm \
+     --site-config /shared/project/triarchy-site.config \
+     --work-dir /shared/scratch/$USER/triarchy-tri-real-05-work \
+     --outdir /shared/project/results/TRI-REAL-05
+   ```
+
+   Pass the same `--extraction-kit`, `--biomass-plate`, and
+   `--max-biological-per-plate` options that you used for the download.
+   `--resume` is on by default, so resubmitting the same script continues an
+   interrupted run.
+
+4. **Read the evaluation.** After a successful run, `triarchy real-world`
+   scores the ZymoBIOMICS samples against `truth/mock_truth.tsv` and writes
+   `mock_evaluation/` inside the results directory:
+
+   | File | Contents |
+   | --- | --- |
+   | `mock_evaluation.json` | Per-assay recall overall, by expected genomic-DNA abundance (≥1%, 0.1–1%, 0.01–0.1%, <0.01%) and by dilution; evidence states of expected taxa; how often taxa absent from the standard were called biologically supported; contamination-associated calls in the other samples |
+   | `mock_taxon_calls.tsv` | One row per mock sample and expected genus: detection and relative abundance in each assay, and TRIARCHY's classification |
+   | `mock_unexpected_taxa.tsv` | Evidence rows in mock samples for genera not in the standard |
+
+   To rerun the evaluation by hand:
+
+   ```bash
+   python3 scripts/evaluate_mock_truth.py \
+     --results /shared/project/results/TRI-REAL-05 \
+     --truth data/real_world/TRI-REAL-05/truth/mock_truth.tsv \
+     --samples data/real_world/TRI-REAL-05/metadata/samples.tsv
+   ```
+
+### Caveats
+
+- Comparisons are at genus level. 16S V4 cannot reliably separate
+  *Escherichia* from *Shigella*, and reference databases use different names
+  for some organisms (for example *Limosilactobacillus* for *Lactobacillus
+  fermentum*); the evaluator accepts these synonyms.
+- 16S does not target the two yeasts and ITS does not target the bacteria, so
+  each assay is scored only on the organisms it can detect.
+- The truth table gives the composition of the standard as manufactured. Lot
+  certificates of analysis report small deviations, and extraction bias is
+  part of what this study measured, so expect differences in abundance even
+  when detection is correct.
+- Dilution labels (`d1`–`d8`) are taken from the Qiita sample names. DNA
+  yields fall with increasing `d`, but the dilution factors are not recorded
+  in the public metadata.
+- The WMS libraries are shallow (on average about 30 MB of compressed reads
+  per sample), which limits detection of the rarest members of D6310.
+
+## TRI-REAL-01: small integration subset
+
+`TRI-REAL-01` is a small subset of the same study, kept for quick integration
+runs. It has no control relationships and no ground truth.
 
 The default TRIARCHY selection is deliberately small enough for an integration
 run while retaining matched assay structure:
