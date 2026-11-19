@@ -53,3 +53,6 @@ env/
 .Rhistory
 .RData
 .Ruserdata
+
+# Manuscript (kept local only)
+manuscript/
