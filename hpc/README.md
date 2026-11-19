@@ -72,8 +72,20 @@ pass the same options again in step 5.
 cp hpc/site.config.example hpc/site.config
 ```
 
-Set `queue` and `clusterOptions` (account) in `hpc/site.config`. Add
-`beforeScript = 'module load ...'` if your compute nodes need modules.
+Set `queue` to your partition in `hpc/site.config`. Uncomment
+`clusterOptions = '--account=...'` only if your cluster requires an account.
+Add `beforeScript = 'module load ...'` if your compute nodes need modules.
+
+Check that the partition can run TRIARCHY's largest tasks (12 CPUs, 96 GB,
+48 h):
+
+```bash
+sinfo -p YOUR_PARTITION -o "%P %l %c %m"
+```
+
+The columns are the time limit, CPUs per node and memory per node (MB). If
+any is smaller, lower the `high` label in `hpc/site.config`, for example
+`withLabel: high { time = 24.h }`.
 
 ## 5. Submit the workflow
 
@@ -135,5 +147,6 @@ triarchy run --profile slurm \
 | `mamba activate` fails in the job | The script loads mamba's shell hook itself; check `mamba --version` works on compute nodes |
 | `reference manifest not found` | Step 2 has not completed in this checkout |
 | `hpc/site.config not found` | Step 4 |
+| `Invalid account or account/partition combination specified` | Remove `clusterOptions = '--account=...'` from `hpc/site.config`, or set it to an account you can use on that partition (`sacctmgr show assoc user=$USER format=account,partition`) |
 | Tasks pending forever | Wrong `queue` or account in `hpc/site.config`, or the partition cannot satisfy 96 GB / 48 h |
 | Nextflow cannot find work files on compute nodes | `WORK_DIR` is not on shared storage |

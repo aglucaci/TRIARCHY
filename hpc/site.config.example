@@ -1,13 +1,16 @@
 // Site-specific SLURM settings for TRIARCHY.
 //
-// Copy to hpc/site.config (ignored by git), fill in your account and
-// partition, and pass it with --site-config. It is layered on top of the
-// built-in `slurm` profile (conf/slurm.config), which sets per-task CPUs,
+// Copy to hpc/site.config (ignored by git) and set your partition, plus an
+// account if your cluster requires one. It is layered on top of the built-in
+// `slurm` profile (conf/slurm.config), which sets per-task CPUs,
 // memory and time: low 1 CPU/2 GB/1 h, medium 4/16 GB/8 h, high 12/96 GB/48 h.
 
 process {
-    queue          = 'YOUR_PARTITION'
-    clusterOptions = '--account=YOUR_ACCOUNT'
+    queue = 'YOUR_PARTITION'
+
+    // Only if your cluster requires a SLURM account (sbatch fails with
+    // "Invalid account or account/partition combination" when it is wrong):
+    // clusterOptions = '--account=YOUR_ACCOUNT'
 
     // Load modules on the compute nodes if your site needs them, e.g.
     // beforeScript = 'module load java/17'
