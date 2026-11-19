@@ -16,7 +16,7 @@
 
 - [ ] `pytest`
 - [ ] `ruff check .`
-- [ ] `shellcheck -S warning scripts/*.sh`
+- [ ] `shellcheck -S warning -s bash scripts/*.sh hpc/*.sbatch`
 - [ ] `triarchy demo --build-only`
 - [ ] `triarchy demo --profile <profile> --resume` (for workflow changes)
 

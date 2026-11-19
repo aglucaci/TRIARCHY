@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `hpc/`: SLURM templates (`site.config.example`, `install_databases.sbatch`,
+  `run_tri_real_05.sbatch`) and a step-by-step guide for running `TRI-REAL-05`
+  on a cluster.
 - `TRI-REAL-05`, the new default public cohort for `triarchy real-world`:
   whole extraction plates from the Shaffer et al. (2022) extraction study
   (Qiita 12201), built from the public Qiita sample information. Every

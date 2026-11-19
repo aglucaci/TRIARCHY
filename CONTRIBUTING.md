@@ -110,7 +110,7 @@ same checks, plus `nextflow config` for every profile and `nextflow lint`:
 ```bash
 pytest                    # unit tests
 ruff check .              # Python lint
-shellcheck -S warning scripts/*.sh
+shellcheck -S warning -s bash scripts/*.sh hpc/*.sbatch
 ```
 
 Add or update tests in `tests/` with every behavior change to metadata

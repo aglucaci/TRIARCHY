@@ -60,3 +60,6 @@ manuscript/
 # Python caches
 __pycache__/
 *.py[cod]
+
+# Site-specific HPC settings
+hpc/site.config

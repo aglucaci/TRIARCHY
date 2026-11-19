@@ -1,0 +1,26 @@
+// Site-specific SLURM settings for TRIARCHY.
+//
+// Copy to hpc/site.config (ignored by git), fill in your account and
+// partition, and pass it with --site-config. It is layered on top of the
+// built-in `slurm` profile (conf/slurm.config), which sets per-task CPUs,
+// memory and time: low 1 CPU/2 GB/1 h, medium 4/16 GB/8 h, high 12/96 GB/48 h.
+
+process {
+    queue          = 'YOUR_PARTITION'
+    clusterOptions = '--account=YOUR_ACCOUNT'
+
+    // Load modules on the compute nodes if your site needs them, e.g.
+    // beforeScript = 'module load java/17'
+
+    // WMS taxonomy scans the full Kraken 2 PlusPFP database in each task.
+    // The built-in limit is 2 concurrent tasks; raise it if the database is
+    // on fast storage that can sustain more parallel reads.
+    withName: WGS_TAXONOMY {
+        maxForks = 8
+    }
+}
+
+executor {
+    // Maximum number of TRIARCHY jobs queued or running at once.
+    queueSize = 50
+}

@@ -89,48 +89,28 @@ on every plate.
    Files land in `data/real_world/TRI-REAL-05/` (`reads/`, `metadata/`,
    `truth/`). Use `--data-dir` to place them on project storage.
 
-2. **Write a site config** for your scheduler, for example
-   `/shared/project/triarchy-site.config`:
-
-   ```groovy
-   process {
-       clusterOptions = '--account=YOUR_ACCOUNT'
-       queue = 'YOUR_PARTITION'
-       // WMS taxonomy dominates runtime: each task scans the full Kraken 2
-       // PlusPFP database. Allow more concurrent tasks if your storage can
-       // sustain it, and place the database on fast storage.
-       withName: WGS_TAXONOMY {
-           maxForks = 8
-       }
-   }
-   ```
-
-3. **Submit the Nextflow head job** so it survives logout. It needs little
-   CPU or memory but must run for the whole workflow:
+2. **Configure your site.** Copy the template and set your SLURM account and
+   partition:
 
    ```bash
-   #!/bin/bash
-   #SBATCH --job-name=triarchy-tri-real-05
-   #SBATCH --time=7-00:00:00
-   #SBATCH --cpus-per-task=2
-   #SBATCH --mem=8G
-   #SBATCH --output=triarchy-tri-real-05-%j.log
-
-   # Batch jobs do not read ~/.bashrc, so load mamba's shell hook first.
-   eval "$(mamba shell hook --shell bash)"
-   mamba activate TRIARCHY
-   cd /path/to/TRIARCHY
-   triarchy real-world --dataset TRI-REAL-05 --skip-download \
-     --profile slurm \
-     --site-config /shared/project/triarchy-site.config \
-     --work-dir /shared/scratch/$USER/triarchy-tri-real-05-work \
-     --outdir /shared/project/results/TRI-REAL-05
+   cp hpc/site.config.example hpc/site.config
    ```
 
-   Pass the same `--extraction-kit`, `--biomass-plate`, and
-   `--max-biological-per-plate` options that you used for the download.
-   `--resume` is on by default, so resubmitting the same script continues an
-   interrupted run.
+3. **Submit the Nextflow head job** from the repository root. It needs little
+   CPU or memory but must run for the whole workflow; Nextflow submits each
+   task as its own SLURM job:
+
+   ```bash
+   sbatch hpc/run_tri_real_05.sbatch
+   ```
+
+   Arguments are passed to `triarchy real-world`, so pass the same
+   `--extraction-kit`, `--biomass-plate`, and `--max-biological-per-plate`
+   options that you used for the download. Set `WORK_DIR` and `OUTDIR` to
+   override the shared work directory and results location.
+   `--resume` is on by default, so resubmitting the same command continues an
+   interrupted run. [`hpc/README.md`](../hpc/README.md) walks through the
+   whole sequence, including installing the reference databases.
 
 4. **Read the evaluation.** After a successful run, `triarchy real-world`
    scores the ZymoBIOMICS samples against `truth/mock_truth.tsv` and writes
