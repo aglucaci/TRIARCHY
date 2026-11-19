@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly SCRIPT_DIR
 readonly VERSION_FILE="${SCRIPT_DIR}/.nextflow-version"
 readonly DATABASE_DIR_FILE="${SCRIPT_DIR}/references/.database-dir"
 
@@ -52,8 +53,9 @@ Options:
   --cpus N              Threads for the locally built host index (default: 4)
   --skip-nextflow       Do not download or validate Nextflow
   --skip-dependencies   Do not create/update the Mamba environment
-  --locked-dependencies Install dependencies from environment.lock.txt instead
-                        of solving environment.yml
+  --locked-dependencies Install the committed lock for this platform
+                        (locks/environment.<platform>.lock.txt) instead of
+                        solving environment.yml
   --skip-databases      Do not download or build references
   --yes                 Accept the large standard database installation
   -h, --help            Show this help
@@ -280,12 +282,24 @@ fi
 
 environment_file="${SCRIPT_DIR}/environment.yml"
 environment_lock="${SCRIPT_DIR}/environment.lock.txt"
+case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64) conda_platform="linux-64" ;;
+    Linux-aarch64) conda_platform="linux-aarch64" ;;
+    Darwin-arm64) conda_platform="osx-arm64" ;;
+    Darwin-x86_64) conda_platform="osx-64" ;;
+    *) conda_platform="unknown" ;;
+esac
+committed_lock="${SCRIPT_DIR}/locks/environment.${conda_platform}.lock.txt"
 if [[ "${SKIP_DEPENDENCIES}" == false ]]; then
     info "Installing the named ${ENV_NAME} production environment with ${environment_manager}"
     if [[ "${LOCKED_DEPENDENCIES}" == true ]]; then
-        [[ -f "${environment_lock}" ]] ||
-            die "missing ${environment_lock}; run without --locked-dependencies first"
-        dependency_args=(install --name "${ENV_NAME}" --file "${environment_lock}")
+        [[ -f "${committed_lock}" ]] ||
+            die "no committed lock for ${conda_platform} (${committed_lock}); run without --locked-dependencies"
+        if "${environment_manager}" env list | awk '{print $1}' | grep -qx "${ENV_NAME}"; then
+            dependency_args=(install --name "${ENV_NAME}" --file "${committed_lock}")
+        else
+            dependency_args=(create --name "${ENV_NAME}" --file "${committed_lock}")
+        fi
     else
         [[ -f "${environment_file}" ]] || die "missing ${environment_file}"
         dependency_args=(env update --name "${ENV_NAME}" --file "${environment_file}" --prune)
@@ -305,6 +319,7 @@ for required_tool in cutadapt itsxpress vsearch Rscript; do
         die "${required_tool} is missing from ${ENV_NAME}; rerun the installer without --skip-dependencies"
 done
 ln -sfn "${SCRIPT_DIR}/triarchy" "${ENV_PREFIX}/bin/triarchy"
+# Record the exact packages installed on this machine (local, not committed).
 "${environment_manager}" list --name "${ENV_NAME}" --explicit >"${environment_lock}"
 
 if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then

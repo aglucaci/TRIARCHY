@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import html
 import json
 import math
 import os
@@ -152,7 +151,7 @@ def cmd_humann(args: argparse.Namespace) -> None:
     if candidates:
         with candidates[0].open(encoding="utf-8", newline="") as handle:
             reader = csv.reader(handle, delimiter="\t")
-            header = next(reader, [])
+            next(reader, None)  # skip header row
             for values in reader:
                 if not values or values[0].startswith("#"):
                     continue
@@ -813,8 +812,13 @@ def cmd_provenance(args: argparse.Namespace) -> None:
         ).strip()
     except (OSError, subprocess.CalledProcessError):
         commit = "unknown"
+    version_file = args.project_dir / "VERSION"
+    triarchy_version = (
+        version_file.read_text(encoding="utf-8").strip() if version_file.is_file() else "unknown"
+    )
     document = {
         "workflow": "TRIARCHY",
+        "triarchy_version": triarchy_version,
         "workflow_version": os.environ.get("NXF_VER", "unknown"),
         "git_commit": commit,
         "samples_sha256": checksum(args.samples),
@@ -922,7 +926,7 @@ function taxonomy(){const kingdoms=[...new Set(D.evidence.map(r=>r.kingdom))].fi
 function evidence(){const classes=[...new Set(D.evidence.map(r=>r.classification))].filter(Boolean),items=Object.entries(counts(D.evidence,'classification')).sort((a,b)=>b[1]-a[1]);$('#evidence-class').innerHTML+=classes.map(x=>`<option value="${esc(x)}">${esc(title(x))}</option>`).join('');const taxa=[...new Set(D.evidence.map(r=>r.canonical_name))].filter(Boolean);$('#evidence-taxon').innerHTML=taxa.map(x=>`<option>${esc(x)}</option>`).join('');$('#evidence-chart').innerHTML=donutChart(items);$('#evidence-class-legend').innerHTML=items.map(([name,value],i)=>`<span><i style="background:${palette[i%palette.length]}"></i>${esc(title(name))} · ${value}</span>`).join('');$('#auth-contam-chart').innerHTML=scoreBeeswarm(D.evidence);const detail=()=>{const tax=$('#evidence-taxon').value,rows=D.evidence.filter(r=>r.canonical_name===tax);if(!rows.length)return;const auth=rows.reduce((a,r)=>a+num(r.biological_authenticity),0)/rows.length,cont=rows.reduce((a,r)=>a+num(r.contamination_probability),0)/rows.length;$('#evidence-detail').innerHTML=`<h3><i>${esc(tax)}</i></h3><div class="detail-grid"><div class="metric"><span>Mean authenticity</span><b>${auth.toFixed(2)}</b></div><div class="metric"><span>Mean contamination</span><b>${cont.toFixed(2)}</b></div><div class="metric"><span>Samples</span><b>${rows.length}</b></div></div><p><b>Decision</b><br>${esc(rows[0].decision_reason||'No explanation emitted.')}</p>`};$('#evidence-taxon').onchange=detail;detail();const render=()=>{const q=$('#evidence-search').value.toLowerCase(),c=$('#evidence-class').value;const rows=D.evidence.filter(r=>(!c||r.classification===c)&&Object.values(r).join(' ').toLowerCase().includes(q));$('#evidence-table').innerHTML=table(rows,['biological_sample_id','canonical_name','kingdom','assay_support','biological_authenticity','authenticity_ci_low','authenticity_ci_high','contamination_probability','classification','discordance_reason','decision_reason'])};$('#evidence-search').oninput=render;$('#evidence-class').onchange=render;render()}
 function ecology(){$('#concordance-chart').innerHTML=concordanceHeatmap(D.concordance);const alphaBy={};D.alpha.forEach(r=>{const k=r.assay||'unknown';(alphaBy[k]??=[]).push(num(r.shannon_diversity||r.shannon||0))});$('#alpha-chart').innerHTML=dotPlot(Object.entries(alphaBy),'Shannon diversity');$('#ecology-table').innerHTML=table(D.concordance,['biological_sample_id','kingdom','assay_pair','shared_taxa','union_taxa','jaccard_presence','spearman_rank_correlation','rank_agreement_score'])}
 function functions(){const render=()=>{const q=$('#function-search').value.toLowerCase();$('#function-table').innerHTML=table(D.functions.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q)))};$('#function-search').oninput=render;render()}
-function provenance(){const p=D.provenance;$('#run-identity').innerHTML=`<div class="detail-grid"><div class="metric"><span>Workflow</span><b>${esc(p.workflow||'TRIARCHY')}</b></div><div class="metric"><span>Nextflow</span><b>${esc(p.workflow_version||'unknown')}</b></div><div class="metric"><span>Run mode</span><b>${esc(title(p.run_mode||'production'))}</b></div></div><p class="sub">Git commit: ${esc(p.git_commit||'unknown')}</p>`;$('#provenance-json').textContent=JSON.stringify(p,null,2);$('#model-json').textContent=JSON.stringify(D.model,null,2)}
+function provenance(){const p=D.provenance;$('#run-identity').innerHTML=`<div class="detail-grid"><div class="metric"><span>Workflow</span><b>${esc(p.workflow||'TRIARCHY')} ${esc(p.triarchy_version||'')}</b></div><div class="metric"><span>Nextflow</span><b>${esc(p.workflow_version||'unknown')}</b></div><div class="metric"><span>Run mode</span><b>${esc(title(p.run_mode||'production'))}</b></div></div><p class="sub">Git commit: ${esc(p.git_commit||'unknown')}</p>`;$('#provenance-json').textContent=JSON.stringify(p,null,2);$('#model-json').textContent=JSON.stringify(D.model,null,2)}
 nav();overview();qc();controlPage();taxonomy();evidence();ecology();functions();provenance();$('#menu').onclick=()=>$('#sidebar').classList.toggle('open');
 </script></body></html>'''
 

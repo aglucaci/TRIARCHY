@@ -9,6 +9,7 @@ abstract: >-
 authors:
   - family-names: Lucaci
     given-names: Alexander
+version: "1.0.0"
 repository-code: "https://github.com/aglucaci/TRIARCHY"
 url: "https://github.com/aglucaci/TRIARCHY"
 license: GPL-3.0-only

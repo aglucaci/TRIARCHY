@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+readonly PROJECT_DIR
 
 DATABASE_DIR="${PROJECT_DIR}/references/data"
 ENV_PREFIX="${PROJECT_DIR}/.tools/env"
@@ -288,6 +289,7 @@ if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
         die "Apple-silicon installation requires Homebrew; install it, then run: brew install bowtie2 bracken"
     HOMEBREW_PREFIX="$(brew --prefix)"
     export PATH="${HOMEBREW_PREFIX}/bin:${ENV_PREFIX}/bin:${PATH}"
+    # shellcheck disable=SC2043  # list kept open for further native tools
     for native_command in bowtie2-build; do
         command -v "${native_command}" >/dev/null 2>&1 ||
             die "missing native ${native_command}; run: brew install bowtie2 bracken"

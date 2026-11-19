@@ -1,0 +1,7 @@
+*
+!VERSION
+!triarchy
+!scripts/
+!workflow/
+!locks/environment.linux-64.lock.txt
+**/__pycache__

@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  checks:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,19 +18,64 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Compile Python sources
-        run: python -m py_compile triarchy scripts/*.py workflow/scripts/*.py
+      - name: Install linters
+        run: pip install ruff shellcheck-py cffconvert
 
-      - name: Check shell syntax
-        run: |
-          for f in install.sh setup_and_run_triarchy.sh scripts/*.sh; do
-            bash -n "$f"
-          done
+      - name: Ruff
+        run: ruff check .
 
-      - name: CLI entry point
-        run: ./triarchy --help
+      - name: ShellCheck
+        run: shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh
 
       - name: Validate CITATION.cff
+        run: cffconvert --validate
+
+      - name: Validate nextflow_schema.json
+        run: python -m json.tool nextflow_schema.json > /dev/null
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Unit tests
+        run: pytest
+
+      - name: CLI entry point
         run: |
-          pip install --quiet cffconvert
-          cffconvert --validate
+          ./triarchy --help
+          ./triarchy --version
+
+  nextflow-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install pinned Nextflow
+        run: |
+          echo "NXF_VER=$(cat .nextflow-version)" >> "$GITHUB_ENV"
+          curl -fsSL https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+      - name: Resolve every profile
+        run: |
+          for profile in laptop local workstation high_memory docker apptainer singularity slurm cloud; do
+            echo "::group::${profile}"
+            nextflow config -profile "${profile}" > /dev/null
+            echo "::endgroup::"
+          done
+
+      - name: Lint workflow scripts
+        run: nextflow lint main.nf modules/local

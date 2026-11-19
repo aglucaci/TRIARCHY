@@ -14,14 +14,16 @@
 
 <!-- Describe what you ran. For scientific changes, compare the production demo evaluation before and after. -->
 
-- [ ] `python -m py_compile triarchy scripts/*.py workflow/scripts/*.py`
-- [ ] `bash -n install.sh setup_and_run_triarchy.sh scripts/*.sh`
+- [ ] `pytest`
+- [ ] `ruff check .`
+- [ ] `shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh`
 - [ ] `triarchy demo --build-only`
 - [ ] `triarchy demo --profile <profile> --resume` (for workflow changes)
 
 ## Checklist
 
 - [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md)
-- [ ] I updated the README and configuration docs where needed
+- [ ] I updated `docs/`, `nextflow_schema.json`, and configuration where needed
+- [ ] I added or updated tests in `tests/`
 - [ ] I added an entry under `## [Unreleased]` in `CHANGELOG.md`
 - [ ] No protected, identifiable, or large data files are included

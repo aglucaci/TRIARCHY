@@ -22,6 +22,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent
+__version__ = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_metadata import MetadataError, read_tsv, validate  # noqa: E402
@@ -38,6 +39,7 @@ PRODUCTION_PROFILES = (
     "slurm",
     "cloud",
 )
+CONTAINER_PROFILES = ("docker", "apptainer", "singularity")
 
 
 def sha256(path: Path) -> str:
@@ -303,6 +305,11 @@ def command_run(args: argparse.Namespace) -> int:
         "--outdir",
         str(args.outdir),
     ])
+    database_dir_file = ROOT / "references" / ".database-dir"
+    if args.profile in CONTAINER_PROFILES and database_dir_file.is_file():
+        reference_root = database_dir_file.read_text(encoding="utf-8").strip()
+        if reference_root:
+            command.extend(["--reference_root", reference_root])
     if args.resume:
         command.append("-resume")
     extra = list(args.nextflow_args or [])
@@ -507,6 +514,7 @@ def command_real_world(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="triarchy", description=__doc__)
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     run_parser = sub.add_parser("run", help="run a production TRIARCHY study")

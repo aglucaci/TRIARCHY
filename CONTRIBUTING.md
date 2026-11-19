@@ -27,12 +27,13 @@ git clone https://github.com/aglucaci/TRIARCHY.git
 cd TRIARCHY
 mamba env create --file environment.yml
 mamba activate TRIARCHY
+pip install pytest ruff shellcheck-py   # development tools
 ```
 
 Most changes to the CLI, metadata validation, and evidence model can be
 developed without the full production reference set. Changes to Nextflow
 processes that call Kraken2, HUMAnN, MetaPhlAn, DADA2, or ITSxpress need the
-references installed with `./install.sh` (see the README).
+references installed with `./install.sh` (see [docs/installation.md](docs/installation.md)).
 
 ## Repository layout
 
@@ -47,6 +48,12 @@ references installed with `./install.sh` (see the README).
 | `conf/` | Executor profiles, primers, assay performance, and evidence policy |
 | `data/` | Benchmark and demo inputs (generated data is not committed) |
 | `results/production_demo/` | Reference outputs of the production demo |
+| `tests/` | pytest unit tests for metadata validation, the evidence model, and repository consistency |
+| `docs/` | User documentation; `docs/parameters.md` is generated from `nextflow_schema.json` |
+| `nextflow_schema.json` | Description, type, and default of every pipeline parameter |
+| `locks/` | Explicit Conda lock files per platform |
+| `Dockerfile` | Task container image (published to `ghcr.io/aglucaci/triarchy`) |
+| `VERSION` | The single TRIARCHY version number |
 
 ## Making a change
 
@@ -74,10 +81,15 @@ Explain *why* in the body when it is not obvious.
 - **Nextflow**: DSL2. Keep process resource labels (`low`, `medium`, `high`)
   consistent with `nextflow.config`. Every process should emit versions and
   provenance consistent with the existing modules.
-- **Shell**: Bash with `set -euo pipefail`. Scripts must pass `bash -n` and
-  should pass [ShellCheck](https://www.shellcheck.net/).
+- **Shell**: Bash with `set -Eeuo pipefail`. Scripts must pass
+  [ShellCheck](https://www.shellcheck.net/) at warning level.
 - **Configuration**: primers belong in `conf/primers.config` and evidence
   thresholds in `conf/evidence_policy.json`. Do not hard-code them in processes.
+- **Parameters**: when adding or changing a `params` entry, update
+  `nextflow_schema.json` and run `python3 scripts/render_parameters_doc.py`.
+  The test suite fails if the schema, config, and docs disagree.
+- **Dependencies**: after editing `environment.yml`, regenerate the files in
+  `locks/` (command in [docs/installation.md](docs/installation.md)).
 - **Line endings**: LF only (enforced by `.gitattributes` and `.editorconfig`).
 
 ## Scientific changes
@@ -93,15 +105,18 @@ or default thresholds affect published results. For these:
 ## Testing
 
 Run the fast checks before every pull request. Continuous integration runs the
-same checks:
+same checks, plus `nextflow config` for every profile and `nextflow lint`:
 
 ```bash
-python -m py_compile triarchy scripts/*.py workflow/scripts/*.py
-bash -n install.sh setup_and_run_triarchy.sh scripts/*.sh
-./triarchy --help
+pytest                    # unit tests
+ruff check .              # Python lint
+shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh
 ```
 
-Validate study metadata and the demo inputs without running Nextflow:
+Add or update tests in `tests/` with every behavior change to metadata
+validation, the evidence model, or integration logic.
+
+Validate the demo inputs without running Nextflow:
 
 ```bash
 triarchy demo --build-only
@@ -122,15 +137,22 @@ rationale and reproducibility as well as code. Pull requests are merged into
 
 ## Releases
 
-Maintainers cut releases by:
-
-1. Moving `## [Unreleased]` entries in `CHANGELOG.md` under a new version heading.
-2. Updating `version` and `date-released` in `CITATION.cff`.
-3. Tagging the commit as `vX.Y.Z` and publishing a GitHub release.
-
 TRIARCHY follows [Semantic Versioning](https://semver.org/). Changes that alter
 outputs for the same inputs and references are treated as at least a minor
 version change.
+
+Maintainers cut a release by:
+
+1. Updating the version in `VERSION`, `manifest.version` in `nextflow.config`,
+   `version` in `CITATION.cff`, and the image tag in `conf/docker.config`,
+   `conf/apptainer.config`, and `conf/singularity.config`. `pytest` fails until
+   all of them agree.
+2. Moving the `## [Unreleased]` entries in `CHANGELOG.md` under the new version
+   with the release date, and setting `date-released` in `CITATION.cff`.
+3. Merging to `main`, then tagging that commit `vX.Y.Z` and pushing the tag.
+   The **Container image** workflow builds and pushes
+   `ghcr.io/aglucaci/triarchy:X.Y.Z`; it fails if the tag and `VERSION` differ.
+4. Publishing a GitHub release from the tag.
 
 ## License
 

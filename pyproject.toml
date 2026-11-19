@@ -1,0 +1,17 @@
+# Tool configuration only. TRIARCHY is installed with environment.yml / install.sh,
+# not as a Python package.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-include = ["triarchy"]
+
+[tool.ruff.lint]
+# Correctness-focused rules. Long lines (E501) and zip(strict=) (B905) are not
+# enforced: the embedded report template and length-checked zips trigger them.
+select = ["E", "F", "W", "B"]
+ignore = ["E501", "B905"]

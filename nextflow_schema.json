@@ -1,0 +1,198 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/aglucaci/TRIARCHY/main/nextflow_schema.json",
+    "title": "TRIARCHY pipeline parameters",
+    "description": "Control-aware integration of WMS, 16S, and ITS microbiome assays",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "description": "Study manifests and the result directory.",
+            "required": ["outdir"],
+            "properties": {
+                "samples": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "Production sample manifest (TSV). See docs/inputs.md."
+                },
+                "input": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Alias for --samples."
+                },
+                "controls": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "Control relationship table (TSV). See docs/inputs.md."
+                },
+                "paired_controls": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Alias for --controls."
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "results",
+                    "description": "Directory for published results."
+                }
+            }
+        },
+        "reference_options": {
+            "title": "Reference databases",
+            "type": "object",
+            "description": "Written to conf/references.config by ./install.sh; normally not set by hand.",
+            "properties": {
+                "reference_root": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "",
+                    "description": "Reference installation root, mounted read-only into containers. Set automatically by `triarchy run` for container profiles."
+                },
+                "host_index": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Bowtie2 host index base path used for host-read removal."
+                },
+                "kraken2_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "",
+                    "description": "Kraken2 database directory (PlusPFP)."
+                },
+                "kraken2_memory_mapping": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run Kraken2 with --memory-mapping instead of loading the database into RAM."
+                },
+                "bracken_read_length": {
+                    "type": "integer",
+                    "default": 150,
+                    "minimum": 1,
+                    "description": "Read length of the Bracken k-mer distribution to use."
+                },
+                "humann_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "",
+                    "description": "HUMAnN ChocoPhlAn nucleotide database directory."
+                },
+                "humann_protein_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "",
+                    "description": "HUMAnN UniRef90 protein database directory."
+                },
+                "metaphlan_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "",
+                    "description": "MetaPhlAn marker database directory."
+                },
+                "metaphlan_index": {
+                    "type": "string",
+                    "default": "",
+                    "description": "MetaPhlAn index name, e.g. mpa_vJun23_CHOCOPhlAnSGB_202307."
+                },
+                "s16_taxonomy": {
+                    "type": "string",
+                    "format": "file-path",
+                    "default": "",
+                    "description": "DADA2-formatted SILVA training FASTA for 16S taxonomy."
+                },
+                "its_taxonomy": {
+                    "type": "string",
+                    "format": "file-path",
+                    "default": "",
+                    "description": "DADA2-formatted UNITE FASTA for ITS taxonomy."
+                },
+                "taxonomy_crosswalk": {
+                    "type": "string",
+                    "format": "file-path",
+                    "default": "",
+                    "description": "Optional curated taxonomy crosswalk TSV applied during harmonization."
+                }
+            }
+        },
+        "assay_options": {
+            "title": "Assay configuration",
+            "type": "object",
+            "description": "Maintained centrally in conf/primers.config; change only when the laboratory protocol changes.",
+            "properties": {
+                "cutadapt_16s_forward": {
+                    "type": "string",
+                    "pattern": "^[ACGTRYSWKMBDHVN]+$",
+                    "default": "CCTACGGGNGGCWGCAG",
+                    "description": "16S forward primer (IUPAC)."
+                },
+                "cutadapt_16s_reverse": {
+                    "type": "string",
+                    "pattern": "^[ACGTRYSWKMBDHVN]+$",
+                    "default": "GACTACHVGGGTATCTAATCC",
+                    "description": "16S reverse primer (IUPAC)."
+                },
+                "cutadapt_its_forward": {
+                    "type": "string",
+                    "pattern": "^[ACGTRYSWKMBDHVN]+$",
+                    "default": "GTGAATCATCGAATCTTTGAA",
+                    "description": "ITS forward primer (IUPAC)."
+                },
+                "cutadapt_its_reverse": {
+                    "type": "string",
+                    "pattern": "^[ACGTRYSWKMBDHVN]+$",
+                    "default": "TCCTCCGCTTATTGATATGC",
+                    "description": "ITS reverse primer (IUPAC)."
+                },
+                "itsxpress_region": {
+                    "type": "string",
+                    "enum": ["ITS1", "ITS2", "ALL"],
+                    "default": "ITS2",
+                    "description": "ITS region extracted by ITSxpress."
+                },
+                "fastp_extra": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Extra arguments appended to the fastp command for WMS QC."
+                }
+            }
+        },
+        "evidence_options": {
+            "title": "Evidence model",
+            "type": "object",
+            "properties": {
+                "assay_performance": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Assay detection-performance table. Defaults to conf/assay_performance.tsv."
+                },
+                "evidence_policy": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Evidence classification thresholds. Defaults to conf/evidence_policy.json."
+                }
+            }
+        },
+        "resource_options": {
+            "title": "Resource options",
+            "type": "object",
+            "properties": {
+                "humann_time": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d+)?\\s*(s|m|h|d)$",
+                    "default": "48h",
+                    "description": "Wall-time limit for each HUMAnN task."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {"$ref": "#/$defs/input_output_options"},
+        {"$ref": "#/$defs/reference_options"},
+        {"$ref": "#/$defs/assay_options"},
+        {"$ref": "#/$defs/evidence_options"},
+        {"$ref": "#/$defs/resource_options"}
+    ]
+}
