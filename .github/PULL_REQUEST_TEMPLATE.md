@@ -16,7 +16,7 @@
 
 - [ ] `pytest`
 - [ ] `ruff check .`
-- [ ] `shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh`
+- [ ] `shellcheck -S warning scripts/*.sh`
 - [ ] `triarchy demo --build-only`
 - [ ] `triarchy demo --profile <profile> --resume` (for workflow changes)
 

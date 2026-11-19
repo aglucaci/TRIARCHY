@@ -22,6 +22,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent
+DATABASE_DIR_FILE = ROOT / "references" / ".database-dir"
+DEFAULT_DATABASE_MANIFEST = ROOT / "references" / "manifest.tsv"
 __version__ = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -271,12 +273,16 @@ def command_run(args: argparse.Namespace) -> int:
         if not required.exists():
             print(f"ERROR: required production file is missing: {required}", file=sys.stderr)
             if required == reference_config:
-                print("Run ./install.sh to install the full production references.", file=sys.stderr)
+                print(
+                    "Install the production references with: "
+                    "triarchy databases install --destination /path/to/references --yes",
+                    file=sys.stderr,
+                )
             return 2
 
     nextflow = str(local_nextflow) if local_nextflow.is_file() else shutil.which("nextflow")
     if not nextflow:
-        print("ERROR: Nextflow is not installed; run ./install.sh first.", file=sys.stderr)
+        print("ERROR: Nextflow is not installed; run scripts/install_environment.sh first.", file=sys.stderr)
         return 2
 
     command = [
@@ -311,9 +317,8 @@ def command_run(args: argparse.Namespace) -> int:
         "--outdir",
         str(args.outdir),
     ])
-    database_dir_file = ROOT / "references" / ".database-dir"
-    if args.profile in CONTAINER_PROFILES and database_dir_file.is_file():
-        reference_root = database_dir_file.read_text(encoding="utf-8").strip()
+    if args.profile in CONTAINER_PROFILES and DATABASE_DIR_FILE.is_file():
+        reference_root = DATABASE_DIR_FILE.read_text(encoding="utf-8").strip()
         if reference_root:
             command.extend(["--reference_root", reference_root])
     if args.resume:
@@ -332,6 +337,14 @@ def command_run(args: argparse.Namespace) -> int:
 
 
 def command_database_check(args: argparse.Namespace) -> int:
+    if not args.manifest.is_file():
+        print(f"ERROR: reference manifest not found: {args.manifest}", file=sys.stderr)
+        print(
+            "The references are not installed in this checkout. Install them with: "
+            "triarchy databases install --destination /path/to/references --yes",
+            file=sys.stderr,
+        )
+        return 2
     try:
         report = check_databases(args.manifest, args.destination)
     except (OSError, ValueError, json.JSONDecodeError) as error:
@@ -360,6 +373,7 @@ def command_database_install(args: argparse.Namespace) -> int:
         str(installer) if platform.system() == "Windows" else "",
         "--database-dir", str(args.destination),
         "--env-prefix", sys.prefix,
+        "--cpus", str(args.cpus),
     ]
     command = [item for item in command if item]
     if args.yes:
@@ -374,8 +388,13 @@ def command_database_install(args: argparse.Namespace) -> int:
     completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
     if completed.returncode:
         return completed.returncode
-    if args.manifest:
-        report = check_databases(args.manifest, args.destination)
+    # Container profiles mount this directory; `triarchy run` reads it back.
+    DATABASE_DIR_FILE.parent.mkdir(parents=True, exist_ok=True)
+    DATABASE_DIR_FILE.write_text(f"{args.destination.resolve()}\n", encoding="utf-8")
+    manifest = args.manifest or DEFAULT_DATABASE_MANIFEST
+    if manifest.is_file():
+        report = check_databases(manifest, None)
+        print(json.dumps(report, indent=2))
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -698,14 +717,29 @@ def build_parser() -> argparse.ArgumentParser:
     databases = sub.add_parser("databases", help="database manifest utilities")
     database_sub = databases.add_subparsers(dest="database_command", required=True)
     check = database_sub.add_parser("check", help="verify database paths and checksums")
-    check.add_argument("--manifest", type=Path, required=True)
+    check.add_argument(
+        "--manifest", type=Path, default=DEFAULT_DATABASE_MANIFEST,
+        help="reference manifest (default: references/manifest.tsv, written by `databases install`)",
+    )
     check.add_argument("--destination", type=Path)
     check.add_argument("--report", type=Path)
     check.set_defaults(func=command_database_check)
 
-    install = database_sub.add_parser("install", help="run the checkpointed TRIARCHY database installer")
-    install.add_argument("--manifest", type=Path, help="optional manifest to verify after installation")
-    install.add_argument("--destination", type=Path, required=True)
+    install = database_sub.add_parser(
+        "install",
+        help="download and build the production reference databases (resumable)",
+        description=(
+            "Download and build the host, SILVA, ITS, MetaPhlAn, HUMAnN and Kraken2 PlusPFP/Bracken "
+            "references (several hundred GB). Rerun the same command to resume. Writes "
+            "conf/references.config and references/manifest.tsv, then verifies the installation."
+        ),
+    )
+    install.add_argument(
+        "--manifest", type=Path,
+        help="manifest to verify after installation (default: references/manifest.tsv)",
+    )
+    install.add_argument("--destination", type=Path, required=True, help="directory for the reference data")
+    install.add_argument("--cpus", type=int, default=4, help="threads for building the host index (default: 4)")
     install.add_argument("--silva-archive", type=Path)
     install.add_argument("--kraken-archive", type=Path)
     install.add_argument("--download-attempts", type=int)

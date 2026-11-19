@@ -116,8 +116,9 @@ on every plate.
    #SBATCH --mem=8G
    #SBATCH --output=triarchy-tri-real-05-%j.log
 
-   source "$(conda info --base)/etc/profile.d/conda.sh"
-   conda activate TRIARCHY
+   # Batch jobs do not read ~/.bashrc, so load mamba's shell hook first.
+   eval "$(mamba shell hook --shell bash)"
+   mamba activate TRIARCHY
    cd /path/to/TRIARCHY
    triarchy real-world --dataset TRI-REAL-05 --skip-download \
      --profile slurm \

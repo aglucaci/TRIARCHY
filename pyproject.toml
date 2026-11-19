@@ -1,4 +1,4 @@
-# Tool configuration only. TRIARCHY is installed with environment.yml / install.sh,
+# Tool configuration only. TRIARCHY is installed with scripts/install_environment.sh,
 # not as a Python package.
 
 [tool.pytest.ini_options]

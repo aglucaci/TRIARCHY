@@ -20,7 +20,7 @@ Study manifests and the result directory.
 
 ## Reference databases
 
-Written to conf/references.config by ./install.sh; normally not set by hand.
+Written to conf/references.config by `triarchy databases install`; normally not set by hand.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |

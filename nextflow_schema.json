@@ -44,7 +44,7 @@
         "reference_options": {
             "title": "Reference databases",
             "type": "object",
-            "description": "Written to conf/references.config by ./install.sh; normally not set by hand.",
+            "description": "Written to conf/references.config by `triarchy databases install`; normally not set by hand.",
             "properties": {
                 "reference_root": {
                     "type": "string",

@@ -33,7 +33,7 @@ pip install pytest ruff shellcheck-py   # development tools
 Most changes to the CLI, metadata validation, and evidence model can be
 developed without the full production reference set. Changes to Nextflow
 processes that call Kraken2, HUMAnN, MetaPhlAn, DADA2, or ITSxpress need the
-references installed with `./install.sh` (see [docs/installation.md](docs/installation.md)).
+references installed with `triarchy databases install` (see [docs/installation.md](docs/installation.md)).
 
 ## Repository layout
 
@@ -110,7 +110,7 @@ same checks, plus `nextflow config` for every profile and `nextflow lint`:
 ```bash
 pytest                    # unit tests
 ruff check .              # Python lint
-shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh
+shellcheck -S warning scripts/*.sh
 ```
 
 Add or update tests in `tests/` with every behavior change to metadata

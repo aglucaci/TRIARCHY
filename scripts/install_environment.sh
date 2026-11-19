@@ -1,24 +1,17 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 readonly SCRIPT_DIR
 readonly VERSION_FILE="${SCRIPT_DIR}/.nextflow-version"
-readonly DATABASE_DIR_FILE="${SCRIPT_DIR}/references/.database-dir"
 
 PREFIX="${SCRIPT_DIR}/.tools/bin"
 readonly ENV_NAME="TRIARCHY"
 ENV_PREFIX=""
-DATABASE_DIR="${SCRIPT_DIR}/references/data"
-DATABASE_DIR_EXPLICIT=false
-KRAKEN_ARCHIVE=""
-SILVA_ARCHIVE=""
-INSTALL_CPUS=4
 ENVIRONMENT_MANAGER="${TRIARCHY_ENV_MANAGER:-mamba}"
 SKIP_NEXTFLOW=false
 SKIP_DEPENDENCIES=false
 LOCKED_DEPENDENCIES=false
-SKIP_DATABASES=false
 ASSUME_YES=false
 SETUP_STARTED="${SECONDS}"
 
@@ -38,26 +31,22 @@ fi
 
 usage() {
     cat <<'EOF'
-Usage: ./install.sh [options]
+Usage: scripts/install_environment.sh [options]
 
-Set up a complete local TRIARCHY environment.
+Install the TRIARCHY software: the named TRIARCHY conda environment, the pinned
+Nextflow release, and the `triarchy` command on the environment's PATH.
+Reference databases are installed separately with `triarchy databases install`.
 
 Options:
   --prefix DIR          Install Nextflow in DIR (default: .tools/bin)
   --environment-manager CMD
                         mamba, micromamba, conda, or auto (default: mamba)
-  --database-dir DIR    Reference destination (default: last successful location,
-                        otherwise references/data)
-  --silva-archive FILE  Use an existing SILVA 138.2 DADA2 .fa.gz archive
-  --kraken-archive FILE Use an existing PlusPFP .tar.gz instead of downloading
-  --cpus N              Threads for the locally built host index (default: 4)
   --skip-nextflow       Do not download or validate Nextflow
   --skip-dependencies   Do not create/update the Mamba environment
   --locked-dependencies Install the committed lock for this platform
                         (locks/environment.<platform>.lock.txt) instead of
                         solving environment.yml
-  --skip-databases      Do not download or build references
-  --yes                 Accept the large standard database installation
+  --yes                 Do not prompt during environment creation
   -h, --help            Show this help
 
 Environment:
@@ -66,9 +55,6 @@ Environment:
   TRIARCHY_ENV_MANAGER
                      Override the environment manager (default: mamba)
   NO_COLOR           Disable ANSI colors
-
-The complete production reference set can exceed 400 GB. Downloads are
-resumable and validated before the generated configuration is activated.
 EOF
 }
 
@@ -107,27 +93,6 @@ while (($#)); do
             ENVIRONMENT_MANAGER="$2"
             shift 2
             ;;
-        --database-dir)
-            (($# >= 2)) || die "--database-dir requires a directory"
-            DATABASE_DIR="$2"
-            DATABASE_DIR_EXPLICIT=true
-            shift 2
-            ;;
-        --silva-archive)
-            (($# >= 2)) || die "--silva-archive requires a file"
-            SILVA_ARCHIVE="$2"
-            shift 2
-            ;;
-        --kraken-archive)
-            (($# >= 2)) || die "--kraken-archive requires a file"
-            KRAKEN_ARCHIVE="$2"
-            shift 2
-            ;;
-        --cpus)
-            (($# >= 2)) || die "--cpus requires an integer"
-            INSTALL_CPUS="$2"
-            shift 2
-            ;;
         --skip-nextflow)
             SKIP_NEXTFLOW=true
             shift
@@ -138,10 +103,6 @@ while (($#)); do
             ;;
         --locked-dependencies)
             LOCKED_DEPENDENCIES=true
-            shift
-            ;;
-        --skip-databases)
-            SKIP_DATABASES=true
             shift
             ;;
         --yes)
@@ -158,30 +119,6 @@ while (($#)); do
     esac
 done
 
-# Reuse the last successful database destination. Older installations did not
-# write the state file, so recover the data root from references.config once.
-if [[ "${DATABASE_DIR_EXPLICIT}" == false ]]; then
-    if [[ -s "${DATABASE_DIR_FILE}" ]]; then
-        DATABASE_DIR="$(head -n 1 "${DATABASE_DIR_FILE}")"
-    elif [[ -s "${SCRIPT_DIR}/conf/references.config" ]]; then
-        configured_kraken_dir="$(
-            awk -F "'" '/^[[:space:]]*kraken2_db[[:space:]]*=/ { print $2; exit }' \
-                "${SCRIPT_DIR}/conf/references.config"
-        )"
-        if [[ -n "${configured_kraken_dir}" ]]; then
-            DATABASE_DIR="$(dirname -- "${configured_kraken_dir}")"
-        fi
-    fi
-fi
-
-if [[ "${SKIP_DATABASES}" == false && "${DATABASE_DIR}" == /Volumes/* ]]; then
-    database_volume="${DATABASE_DIR#/Volumes/}"
-    database_volume="${database_volume%%/*}"
-    [[ -d "/Volumes/${database_volume}" ]] ||
-        die "reference volume /Volumes/${database_volume} is not mounted"
-fi
-
-[[ "${INSTALL_CPUS}" =~ ^[1-9][0-9]*$ ]] || die "--cpus must be a positive integer"
 case "${ENVIRONMENT_MANAGER}" in
     mamba|micromamba|conda|auto) ;;
     *) die "--environment-manager must be mamba, micromamba, conda, or auto" ;;
@@ -332,26 +269,6 @@ if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
         "${native_args[@]}"
 fi
 
-if [[ "${SKIP_DATABASES}" == false ]]; then
-    database_args=(
-        --database-dir "${DATABASE_DIR}"
-        --env-prefix "${ENV_PREFIX}"
-        --cpus "${INSTALL_CPUS}"
-    )
-    if [[ "${ASSUME_YES}" == true ]]; then
-        database_args+=(--yes)
-    fi
-    if [[ -n "${SILVA_ARCHIVE}" ]]; then
-        database_args+=(--silva-archive "${SILVA_ARCHIVE}")
-    fi
-    if [[ -n "${KRAKEN_ARCHIVE}" ]]; then
-        database_args+=(--kraken-archive "${KRAKEN_ARCHIVE}")
-    fi
-    "${SCRIPT_DIR}/scripts/install_databases.sh" "${database_args[@]}"
-    mkdir -p "${SCRIPT_DIR}/references"
-    printf '%s\n' "${DATABASE_DIR}" >"${DATABASE_DIR_FILE}"
-fi
-
 if [[ -f "${SCRIPT_DIR}/main.nf" && -f "${SCRIPT_DIR}/nextflow.config" ]]; then
     info "Nextflow workflow entrypoint detected"
 else
@@ -362,6 +279,9 @@ fi
 
 success "TRIARCHY setup complete in $(format_duration $((SECONDS - SETUP_STARTED)))"
 cat <<EOF
+
+Next, install the reference databases (several hundred GB; resumable):
+  triarchy databases install --destination /path/to/references --yes
 
 Add the local Nextflow installation to this shell:
   mamba activate "${ENV_NAME}"

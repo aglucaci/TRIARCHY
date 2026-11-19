@@ -17,11 +17,12 @@ conclusion. This repository supports production execution only.
 ```bash
 git clone https://github.com/aglucaci/TRIARCHY.git
 cd TRIARCHY
-mamba env create --file environment.yml
+# Software: the TRIARCHY conda environment, Nextflow, and the triarchy command
+scripts/install_environment.sh --yes
 mamba activate TRIARCHY
 
-# Install Nextflow and the full production references (> 500 GB)
-./install.sh --database-dir /path/to/production/references --cpus 8 --yes
+# Reference databases (> 500 GB; rerun the same command to resume)
+triarchy databases install --destination /path/to/production/references --cpus 8 --yes
 
 # Verify the installation end to end on the deterministic demo
 triarchy demo --profile laptop --resume

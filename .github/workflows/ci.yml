@@ -25,7 +25,7 @@ jobs:
         run: ruff check .
 
       - name: ShellCheck
-        run: shellcheck -S warning install.sh setup_and_run_triarchy.sh scripts/*.sh
+        run: shellcheck -S warning scripts/*.sh
 
       - name: Validate CITATION.cff
         run: cffconvert --validate

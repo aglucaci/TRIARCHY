@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `install.sh` is split in two. `scripts/install_environment.sh` installs the
+  software (the `TRIARCHY` conda environment, Nextflow and the `triarchy`
+  command); `triarchy databases install` installs the reference databases. The
+  database command gains `--cpus`, records the reference root in
+  `references/.database-dir`, and verifies the installation against
+  `references/manifest.tsv`. `triarchy databases check` now reads that manifest
+  by default. `setup_and_run_triarchy.sh` was removed.
+
 ### Fixed
 
 - Real-world downloads no longer stop at the first failed file. When ENA's

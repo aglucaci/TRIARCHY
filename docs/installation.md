@@ -52,35 +52,55 @@ and is not a dependable baseline for full production datasets.
 
 ## Install
 
-Create the named environment and install the complete production references:
+Installation has two steps: the software, then the reference databases.
+
+### 1. Software
 
 ```bash
-mamba env create --file environment.yml
+scripts/install_environment.sh --yes
 mamba activate TRIARCHY
-
-./install.sh \
-  --database-dir /path/to/production/references \
-  --cpus 8 \
-  --yes
 ```
 
-The installer downloads resumably, validates completed stages, writes
-`conf/references.config`, and records the selected reference root in
-`references/.database-dir`.
-
-Useful installer options:
+This creates or updates the named `TRIARCHY` conda environment from
+`environment.yml`, installs the Nextflow release pinned in `.nextflow-version`
+into `.tools/bin`, and links the `triarchy` command into the environment.
 
 | Option | Meaning |
 | --- | --- |
-| `--database-dir DIR` | Production reference destination |
-| `--silva-archive FILE` | Install a pre-existing, checksum-verified SILVA archive |
-| `--kraken-archive FILE` | Reuse an existing full PlusPFP archive |
-| `--cpus N` | Installation/indexing threads |
-| `--locked-dependencies` | Install the pinned dependency lock |
+| `--environment-manager CMD` | `mamba` (default), `micromamba`, `conda`, or `auto` |
+| `--locked-dependencies` | Install the committed lock for this platform instead of solving `environment.yml` |
 | `--skip-nextflow` | Keep the existing Nextflow installation |
 | `--skip-dependencies` | Keep the existing `TRIARCHY` environment |
-| `--skip-databases` | Keep the current production references |
-| `--yes` | Accept the large non-interactive installation |
+| `--prefix DIR` | Install Nextflow in `DIR` (default: `.tools/bin`) |
+| `--yes` | Do not prompt during environment creation |
+
+### 2. Reference databases
+
+```bash
+triarchy databases install --destination /path/to/production/references --cpus 8 --yes
+```
+
+The installer downloads resumably (rerun the same command after an
+interruption), validates completed stages, writes `conf/references.config` and
+`references/manifest.tsv`, records the reference root in
+`references/.database-dir`, and finally checks every installed path. Check an
+existing installation at any time with:
+
+```bash
+triarchy databases check
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--destination DIR` | Production reference destination |
+| `--cpus N` | Threads for building the host index (default: 4) |
+| `--silva-archive FILE` | Install a pre-existing, checksum-verified SILVA archive |
+| `--kraken-archive FILE` | Reuse an existing full PlusPFP archive |
+| `--download-attempts N` | Retry attempts per download stage (default: 20) |
+| `--yes` | Accept the large download without prompting |
+
+On a cluster, run it on a node with internet access inside `tmux`, `screen`,
+or a batch job; the full installation takes hours.
 
 SILVA downloads are automatic and mirror-aware. TRIARCHY tries the official
 SILVA release server first and then a checksum-identical Zenodo mirror. Each
@@ -111,7 +131,7 @@ constraints, so a fresh solve can pick up newer releases. For reproducible
 installs, use the committed explicit lock for your platform:
 
 ```bash
-./install.sh --locked-dependencies --database-dir /path/to/production/references --yes
+scripts/install_environment.sh --locked-dependencies --yes
 ```
 
 | Platform | Lock file |
