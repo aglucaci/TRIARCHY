@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Real-world downloads no longer stop at the first failed file. When ENA's
+  processed FASTQ is missing (served as a directory or web page), the run is
+  fetched from the submitter's original FASTQs with their own checksums;
+  remaining failures are listed in `download_failures.tsv` and retried on the
+  next run.
+
 ### Added
 
 - `TRI-REAL-05`, the new default public cohort for `triarchy real-world`:

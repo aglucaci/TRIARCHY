@@ -150,6 +150,15 @@ on every plate.
      --samples data/real_world/TRI-REAL-05/metadata/samples.tsv
    ```
 
+   **Download problems.** Some ENA runs have a broken processed FASTQ (for
+   example `ERR8577066_2.fastq.gz` is an empty directory on ENA's server).
+   When that happens the downloader fetches that run's original submitted
+   FASTQs instead, both mates together, and verifies them against their own
+   ENA checksums. Runs that still fail are listed in
+   `metadata/download_failures.tsv` and the command exits with an error after
+   trying every other file; rerun the same command to retry them, since
+   completed files are kept.
+
 ### Caveats
 
 - Comparisons are at genus level. 16S V4 cannot reliably separate

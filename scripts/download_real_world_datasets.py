@@ -62,6 +62,8 @@ ENA_FIELDS = [
     "fastq_md5",
     "fastq_bytes",
     "submitted_ftp",
+    "submitted_bytes",
+    "submitted_md5",
     "sra_ftp",
 ]
 
@@ -84,6 +86,9 @@ DOWNLOAD_FIELDS = [
     "local_path",
     "md5",
     "bytes",
+    "fallback_url",
+    "fallback_md5",
+    "fallback_bytes",
 ]
 
 SAMPLE_FIELDS = [
@@ -505,6 +510,16 @@ def build_download_manifest(dataset_dir: Path, selected_rows: list[dict[str, str
         urls = split_ena_list(row.get("fastq_ftp", ""))
         md5s = split_ena_list(row.get("fastq_md5", ""))
         sizes = split_ena_list(row.get("fastq_bytes", ""))
+        submitted = split_ena_list(row.get("submitted_ftp", ""))
+        submitted_md5s = split_ena_list(row.get("submitted_md5", ""))
+        submitted_sizes = split_ena_list(row.get("submitted_bytes", ""))
+        # The submitter's original FASTQs are a fallback when ENA's processed
+        # copy is missing; usable only when they pair one-to-one with it.
+        use_fallback = (
+            len(submitted) == len(urls)
+            and len(submitted_md5s) == len(urls)
+            and all(re.search(r"\.f(ast)?q(\.gz)?$", item) for item in submitted)
+        )
         for index, url in enumerate(urls, 1):
             source_url = ena_file_url(url)
             filename = Path(urllib.parse.urlparse(source_url).path).name
@@ -522,6 +537,12 @@ def build_download_manifest(dataset_dir: Path, selected_rows: list[dict[str, str
                     "local_path": normalize_path(local_path.relative_to(dataset_dir)),
                     "md5": md5s[index - 1] if index <= len(md5s) else "",
                     "bytes": sizes[index - 1] if index <= len(sizes) else "",
+                    "fallback_url": ena_file_url(submitted[index - 1]) if use_fallback else "",
+                    "fallback_md5": submitted_md5s[index - 1] if use_fallback else "",
+                    "fallback_bytes": (
+                        submitted_sizes[index - 1]
+                        if use_fallback and index <= len(submitted_sizes) else ""
+                    ),
                 }
             )
     return manifest
@@ -682,6 +703,19 @@ def existing_file_ok(path: Path, expected_md5: str, expected_bytes: str, verify_
     return not (verify_md5 and expected_md5) or md5sum(path) == expected_md5
 
 
+def existing_item_ok(path: Path, item: dict[str, object], verify_md5: bool) -> bool:
+    """True when `path` holds either ENA's processed file or the submitted fallback."""
+    if existing_file_ok(path, str(item["md5"]), str(item["bytes"]), verify_md5):
+        return True
+    return bool(item.get("fallback_url")) and existing_file_ok(
+        path, str(item.get("fallback_md5", "")), str(item.get("fallback_bytes", "")), verify_md5
+    )
+
+
+class NotAFileError(RuntimeError):
+    """The server answered with a directory listing or web page instead of a file."""
+
+
 def progress_message(label: str, done: int, total: int | None, started: float) -> str:
     elapsed = max(time.monotonic() - started, 1e-9)
     speed = done / elapsed
@@ -738,6 +772,12 @@ def download_one(
                 )
             request = urllib.request.Request(source_url, headers={"User-Agent": "TRIARCHY-real-world-downloader/1.0"})
             with urllib.request.urlopen(request, timeout=timeout) as response, part.open("wb") as handle:
+                content_type = response.headers.get("Content-Type", "")
+                if response.geturl().endswith("/") or content_type.startswith("text/html"):
+                    raise NotAFileError(
+                        f"{source_url} is not a downloadable file on the server "
+                        f"(got {content_type or 'no content type'} from {response.geturl()})"
+                    )
                 while True:
                     block = response.read(CHUNK_SIZE)
                     if not block:
@@ -778,6 +818,8 @@ def download_one(
             last_error = error
             if part.exists():
                 part.unlink()
+            if isinstance(error, NotAFileError):
+                break
             if attempt < retries:
                 if not quiet:
                     print(
@@ -874,6 +916,96 @@ def process_qiita_cohort(
     return selected, samples, controls, {"selection": selection_summary, "metadata": metadata_summary}
 
 
+def download_manifest_files(
+    args: argparse.Namespace,
+    config: DatasetConfig,
+    dataset_dir: Path,
+    manifest: list[dict[str, object]],
+    summary: dict[str, object],
+) -> list[dict[str, object]]:
+    """Download every manifest file, run by run, and return the failures.
+
+    If ENA's processed copy of any file in a run cannot be fetched, every file
+    of that run is fetched from the submitter's original upload instead, so the
+    reads of a pair always come from the same source. One failed run does not
+    stop the others; rerunning skips files that are already complete.
+    """
+    runs: dict[str, list[tuple[int, dict[str, object]]]] = {}
+    for index, item in enumerate(manifest, 1):
+        runs.setdefault(str(item["run_accession"]), []).append((index, item))
+    failures: list[dict[str, object]] = []
+    total = len(manifest)
+
+    def fetch(index: int, item: dict[str, object], fallback: bool) -> dict[str, object]:
+        return download_one(
+            str(item["fallback_url" if fallback else "source_url"]),
+            dataset_dir / str(item["local_path"]),
+            str(item["fallback_md5" if fallback else "md5"]),
+            str(item["fallback_bytes" if fallback else "bytes"]),
+            force=True if fallback else args.force,
+            verify_md5=args.verify_md5,
+            timeout=args.timeout,
+            retries=args.retries,
+            progress_label=f"{config.dataset_id} [{index}/{total}]" + (" (submitted copy)" if fallback else ""),
+            progress_interval=args.progress_interval,
+            quiet=args.quiet,
+        )
+
+    def record(index: int, item: dict[str, object], result: dict[str, object]) -> None:
+        status = str(result["status"])
+        if status in summary:
+            summary[status] = int(summary[status]) + 1
+        summary["bytes"] = int(summary["bytes"]) + int(result["bytes"])
+        summary["seconds"] = float(summary["seconds"]) + float(result["seconds"])
+        if not args.quiet:
+            print(
+                f"{config.dataset_id} [{index}/{total}] {status} {item['local_path']} "
+                f"({human_bytes(int(result['bytes']))})",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    for run, items in runs.items():
+        results: list[tuple[int, dict[str, object], dict[str, object]]] = []
+        error: Exception | None = None
+        for index, item in items:
+            local_path = dataset_dir / str(item["local_path"])
+            if not args.force and existing_item_ok(local_path, item, args.verify_md5):
+                results.append((index, item, {
+                    "status": "skipped_existing", "bytes": local_path.stat().st_size, "seconds": 0.0,
+                }))
+                continue
+            try:
+                results.append((index, item, fetch(index, item, fallback=False)))
+            except RuntimeError as exc:
+                error = exc
+                break
+        if error is not None and all(item.get("fallback_url") for _, item in items):
+            if not args.quiet:
+                print(
+                    f"{config.dataset_id}: {run}: ENA processed copy unavailable ({error}); "
+                    "fetching the submitted FASTQs for this run",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            try:
+                results = [(index, item, fetch(index, item, fallback=True)) for index, item in items]
+                error = None
+            except RuntimeError as exc:
+                error = exc
+        if error is not None:
+            if not args.quiet:
+                print(f"{config.dataset_id}: {run}: FAILED: {error}", file=sys.stderr, flush=True)
+            failures.extend(
+                {"run_accession": run, "local_path": item["local_path"], "error": str(error)}
+                for _, item in items
+            )
+            continue
+        for index, item, result in results:
+            record(index, item, result)
+    return failures
+
+
 def process_dataset(args: argparse.Namespace, config: DatasetConfig) -> dict[str, object]:
     max_groups = args.max_groups if args.max_groups is not None else config.default_max_groups
     dataset_dir = args.data_dir / config.dataset_id
@@ -927,34 +1059,12 @@ def process_dataset(args: argparse.Namespace, config: DatasetConfig) -> dict[str
                 file=sys.stderr,
                 flush=True,
             )
-        for index, item in enumerate(download_manifest, 1):
-            local_path = dataset_dir / str(item["local_path"])
-            progress_label = f"{config.dataset_id} [{index}/{len(download_manifest)}]"
-            result = download_one(
-                str(item["source_url"]),
-                local_path,
-                str(item["md5"]),
-                str(item["bytes"]),
-                force=args.force,
-                verify_md5=args.verify_md5,
-                timeout=args.timeout,
-                retries=args.retries,
-                progress_label=progress_label,
-                progress_interval=args.progress_interval,
-                quiet=args.quiet,
-            )
-            status = str(result["status"])
-            if status in download_summary:
-                download_summary[status] = int(download_summary[status]) + 1
-            download_summary["bytes"] = int(download_summary["bytes"]) + int(result["bytes"])
-            download_summary["seconds"] = float(download_summary["seconds"]) + float(result["seconds"])
-            if not args.quiet:
-                print(
-                    f"{progress_label} {status} {item['local_path']} "
-                    f"({human_bytes(int(result['bytes']))})",
-                    file=sys.stderr,
-                    flush=True,
-                )
+        failures = download_manifest_files(
+            args, config, dataset_dir, download_manifest, download_summary
+        )
+        download_summary["failed"] = len(failures)
+        if failures:
+            write_tsv(metadata_dir / "download_failures.tsv", ["run_accession", "local_path", "error"], failures)
         elapsed = time.monotonic() - started_downloads
         if not args.quiet:
             speed = int(download_summary["bytes"]) / elapsed if elapsed > 0 else 0
@@ -1070,6 +1180,7 @@ def main(argv: list[str] | None = None) -> int:
     requested = args.dataset or ["TRI-REAL-01"]
     dataset_ids = list(DATASETS) if "all" in requested else requested
     args.data_dir = args.data_dir if args.data_dir.is_absolute() else ROOT / args.data_dir
+    failed_datasets: list[str] = []
     try:
         for dataset_id in dataset_ids:
             try:
@@ -1083,8 +1194,20 @@ def main(argv: list[str] | None = None) -> int:
                 f"manifested {payload['manifest_files']} FASTQ files",
                 flush=True,
             )
+            failed = int(payload["download_summary"].get("failed", 0) or 0)
+            if failed:
+                failed_datasets.append(dataset_id)
+                print(
+                    f"ERROR: {dataset_id}: {failed} FASTQ files could not be downloaded; see "
+                    f"{display_data_dir(args.data_dir / dataset_id)}/metadata/download_failures.tsv. "
+                    "Rerun the same command to retry them; completed files are kept.",
+                    file=sys.stderr,
+                    flush=True,
+                )
     except RuntimeError as error:
         print(f"error: {error}", file=sys.stderr)
+        return 1
+    if failed_datasets:
         return 1
     if not args.download:
         dataset_flags = " ".join(f"--dataset {dataset_id}" for dataset_id in dataset_ids)
