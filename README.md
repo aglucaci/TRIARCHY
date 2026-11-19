@@ -442,6 +442,20 @@ nextflow config -flat | grep -E 'host_index|kraken2_db|humann|taxonomy'
 On laptops, prefer `-profile laptop`, close memory-intensive applications, and
 place the Nextflow work directory and full references on fast external storage.
 
+## Contributing
+
+Bug reports, feature requests, and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, checks, and
+review process, and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security
+issues privately as described in [SECURITY.md](SECURITY.md). Notable changes
+are recorded in [CHANGELOG.md](CHANGELOG.md).
+
+## Citation
+
+If you use TRIARCHY, please cite it using the metadata in
+[CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button reads it).
+
 ## License
 
-See [LICENSE](LICENSE).
+TRIARCHY is released under the GNU General Public License v3.0. See
+[LICENSE](LICENSE).

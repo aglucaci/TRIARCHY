@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use TRIARCHY, please cite it using the metadata below."
+type: software
+title: "TRIARCHY: control-aware integration of WMS, 16S, and ITS microbiome assays"
+abstract: >-
+  TRIARCHY is a production Nextflow workflow for control-aware integration of
+  matched whole-genome shotgun metagenomics, 16S rRNA gene sequencing, and
+  fungal ITS sequencing in environmental microbiome studies.
+authors:
+  - family-names: Lucaci
+    given-names: Alexander
+repository-code: "https://github.com/aglucaci/TRIARCHY"
+url: "https://github.com/aglucaci/TRIARCHY"
+license: GPL-3.0-only
+keywords:
+  - microbiome
+  - metagenomics
+  - 16S rRNA
+  - ITS
+  - Nextflow
+  - bioinformatics

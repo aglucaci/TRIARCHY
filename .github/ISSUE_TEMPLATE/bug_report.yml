@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a failure or incorrect result in TRIARCHY
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please do not include protected or
+        identifiable sequencing data. Report security problems privately as
+        described in SECURITY.md.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact `triarchy` or `nextflow` command you ran.
+      render: bash
+    validations:
+      required: true
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Execution profile
+      options:
+        - laptop
+        - local
+        - workstation
+        - high_memory
+        - docker
+        - apptainer
+        - singularity
+        - slurm
+        - cloud
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Affected stage
+      multiple: true
+      options:
+        - Installation / databases
+        - Metadata validation
+        - WMS (QC, host removal, Kraken2/Bracken, HUMAnN)
+        - 16S (DADA2)
+        - ITS (ITSxpress, DADA2)
+        - Integration / evidence model
+        - Report or outputs
+        - Production demo
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: >-
+        Relevant lines from `.nextflow.log` and the failing task's
+        `work/<hash>/.command.err`.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: TRIARCHY version or commit
+      description: Output of `git rev-parse --short HEAD`.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and architecture, Nextflow version, Java version, and container engine if used.
+      placeholder: |
+        OS: Ubuntu 22.04 x86-64
+        Nextflow: 26.04.0
+        Java: 17
+    validations:
+      required: true

@@ -56,3 +56,7 @@ env/
 
 # Manuscript (kept local only)
 manuscript/
+
+# Python caches
+__pycache__/
+*.py[cod]

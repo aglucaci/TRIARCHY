@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a new capability, assay, database, or executor profile
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do that TRIARCHY does not support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should it work? Include any tools, databases, or references involved.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Scientific rationale
+      description: For changes to calls, thresholds, or evidence rules, explain the rationale and cite sources.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
