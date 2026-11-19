@@ -12,9 +12,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -36,9 +36,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -56,16 +56,18 @@ jobs:
   nextflow-config:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Install pinned Nextflow
         run: |
-          echo "NXF_VER=$(cat .nextflow-version)" >> "$GITHUB_ENV"
+          NXF_VER="$(tr -d '[:space:]' < .nextflow-version)"
+          export NXF_VER
+          echo "NXF_VER=${NXF_VER}" >> "$GITHUB_ENV"
           curl -fsSL https://get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
 
